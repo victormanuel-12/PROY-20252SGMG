@@ -11,6 +11,7 @@ namespace SGMG.Models
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int IdEnfermeria { get; set; }
+
     [ForeignKey(nameof(Personal))]
     public int IdPersonal { get; set; }
     public string NumeroColegiaturaEnfermeria { get; set; } = "";

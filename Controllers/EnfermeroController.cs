@@ -46,6 +46,7 @@ namespace SGMG.Controllers
       return await _enfermeriaService.AddEnfermeriaAsync(enfermeriaRequestDTO);
     }
 
+
     [HttpPut]
     [Route("/enfermerias/update")]
     public async Task<GenericResponse<Enfermeria>> UpdateEnfermeria([FromBody] EnfermeriaRequestDTO enfermeriaRequestDTO)
@@ -64,6 +65,14 @@ namespace SGMG.Controllers
     public IActionResult Error()
     {
       return View("Error!");
+    }
+
+    [HttpGet("/force-error")]
+    public IActionResult ForceError()
+    {
+      int x = 0;
+      int y = 5 / x; // Excepción
+      return Ok();
     }
   }
 }

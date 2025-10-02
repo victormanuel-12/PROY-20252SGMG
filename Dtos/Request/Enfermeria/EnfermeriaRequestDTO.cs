@@ -10,8 +10,7 @@ namespace SGMG.Dtos.Request.Enfermeria
   {
 
 
-    public int IdEnfermeria { get; set; }
-
+    public int? IdEnfermeria { get; set; }
 
     public int? IdPersonal { get; set; }
 
@@ -76,6 +75,7 @@ namespace SGMG.Dtos.Request.Enfermeria
     [StringLength(100, ErrorMessage = "El cargo no puede exceder 100 caracteres")]
     [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$", ErrorMessage = "El cargo solo puede contener letras y espacios")]
     public string? Cargo { get; set; }
+
     [Required(ErrorMessage = "El ID del consultorio es obligatorio")]
     [Range(1, int.MaxValue, ErrorMessage = "El ID del consultorio debe ser un número positivo")]
     public int? IdConsultorio { get; set; }

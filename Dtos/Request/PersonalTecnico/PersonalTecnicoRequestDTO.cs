@@ -8,6 +8,9 @@ namespace SGMG.Dtos.Request.PersonalTecnico
 {
   public class PersonalTecnicoRequestDTO
   {
+
+    public int? IdPersonalT { get; set; }
+
     [Required(ErrorMessage = "El número de DNI es obligatorio")]
     [RegularExpression(@"^[0-9]{8}$", ErrorMessage = "El DNI debe contener solo 8 dígitos")]
     public string? NumeroDni { get; set; }

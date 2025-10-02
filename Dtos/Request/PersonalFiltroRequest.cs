@@ -12,8 +12,13 @@ namespace SGMG.Dtos.Request
     public string? Nombre { get; set; }
     [RegularExpression(@"^\d{8}$", ErrorMessage = "El DNI debe tener exactamente 8 dígitos.")]
     public string? Dni { get; set; }
+
+    [RegularExpression("^(Activo|Inactivo)$", ErrorMessage = "El estado debe ser 'Activo' o 'Inactivo'.")]
     public string? Estado { get; set; }
+
+    [RegularExpression("^(MEDICO GENERAL|ENFERMERIA|CAJERO|ADMINISTRADOR)$", ErrorMessage = "El tipo de personal debe ser: MEDICO GENERAL, ENFERMERIA, CAJERO o ADMINISTRADOR.")]
     public string? TipoPersonal { get; set; }
+
     [Range(1, int.MaxValue, ErrorMessage = "El IdConsultorio debe ser un número entero positivo.")]
     public int? IdConsultorio { get; set; }
   }

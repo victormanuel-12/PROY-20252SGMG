@@ -6,6 +6,7 @@ using SGMG.Repository.RepositoryImpl;
 using SGMG.Services;
 using SGMG.Services.ServiceImpl;
 using SGMG.common.exception;
+using SGMG.common.middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,20 +24,42 @@ builder.Services.AddControllersWithViews(options =>
   options.Filters.Add<GlobalExceptionFilter>();
   options.Filters.Add<ValidationFilter>();
 
+})
+.ConfigureApiBehaviorOptions(options =>
+{
+  // Desactivar la respuesta automática de validación de ASP.NET
+  // Para usar nuestro filtro personalizado
+  options.SuppressModelStateInvalidFilter = true;
+})
+.AddJsonOptions(options =>
+{
+  // ESTO ES LO IMPORTANTE: No lanzar excepciones en errores de tipo
+  options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+  // Esta opción hace que los errores de tipo se agreguen al ModelState
+  // en lugar de lanzar JsonException
 });
 
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+      // Opciones adicionales para mejor control de serialización
+      options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 // Registro de repositorios (Inyección de dependencias)
 builder.Services.AddScoped<IPacienteRepository, PacienteRepositoryImpl>();
 builder.Services.AddScoped<IMedicoRepository, MedicoRepositoryImpl>();
 builder.Services.AddScoped<IEnfermeriaRepository, EnfermeriaRepositoryImpl>();
 builder.Services.AddScoped<IPersonalRepository, PersonalRepositoryImpl>();
+builder.Services.AddScoped<IPersonalTRepository, PersonalTRepositoryImpl>();
 
 // Registro de servicios (Inyección de dependencias)
 builder.Services.AddScoped<IPacienteService, PacienteService>();
 builder.Services.AddScoped<IMedicoService, MedicoServiceImpl>();
 builder.Services.AddScoped<IEnfermeriaService, EnfermeriaServiceImpl>();
 builder.Services.AddScoped<IPersonalService, PersonalServiceImpl>();
-
+builder.Services.AddScoped<IPersonalTservice, PersonalTServiceImpl>();
+builder.Services.AddScoped<GlobalExceptionFilter>();
+builder.Services.AddScoped<ValidationFilter>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -57,7 +80,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthorization();
-
+app.UseMiddleware<JsonValidationMiddleware>();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
