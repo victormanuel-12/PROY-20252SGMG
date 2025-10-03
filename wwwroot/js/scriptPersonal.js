@@ -134,14 +134,17 @@ async function handleSearch(e) {
   clearErrors();
 
   // Get form data
+  const tipoPersonalValue = document.getElementById("tipoPersonal").value;
+  const consultorioValue = document.getElementById("consultorio").value;
+
   const formData = {
     Nombre: document.getElementById("nombre").value.trim() || null,
     Dni: document.getElementById("dni").value.trim() || null,
     Estado: document.getElementById("estado").value || null,
-    TipoPersonal: document.getElementById("tipoPersonal").value || null,
-    IdConsultorio: document.getElementById("consultorio").value
-      ? parseInt(document.getElementById("consultorio").value)
-      : null,
+
+    // 👇 Aquí la lógica que pediste
+    TipoPersonal: tipoPersonalValue === "" ? "TODOS" : tipoPersonalValue,
+    IdConsultorio: consultorioValue === "" ? null : parseInt(consultorioValue),
   };
 
   try {

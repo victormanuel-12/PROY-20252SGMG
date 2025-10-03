@@ -46,7 +46,8 @@ namespace SGMG.Services.ServiceImpl
           if (!string.IsNullOrEmpty(filtro.TipoPersonal))
           {
             var tipoValido = filtro.TipoPersonal.Equals("Medico General", StringComparison.OrdinalIgnoreCase) ||
-                            filtro.TipoPersonal.Equals("Enfermeria", StringComparison.OrdinalIgnoreCase);
+                            filtro.TipoPersonal.Equals("Enfermeria", StringComparison.OrdinalIgnoreCase) ||
+                            filtro.TipoPersonal.Equals("Todos", StringComparison.OrdinalIgnoreCase);
 
             if (!tipoValido)
               return new GenericResponse<IEnumerable<PersonalRegistradoResponse>>(false, "El filtro de consultorio solo aplica para Médicos y Enfermería.");
