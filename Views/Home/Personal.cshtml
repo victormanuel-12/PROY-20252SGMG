@@ -1,0 +1,103 @@
+@{
+    ViewData["Title"] = "Gestión de Personal";
+    Layout = "~/Views/Shared/_LayoutA.cshtml";
+}
+
+
+<div class="page-container">
+    <!-- Alert Messages -->
+    <div id="alertContainer"></div>
+
+    <!-- Summary Cards -->
+    <div class="summary-section">
+        <h2 class="section-title">Resumen del Personal</h2>
+        <div class="summary-cards" id="summaryCards">
+            <!-- Cards will be loaded dynamically -->
+        </div>
+    </div>
+
+    <!-- Search Filters -->
+    <div class="filters-section">
+        <h3 class="section-title">Filtros de Búsqueda</h3>
+        <form id="searchForm">
+            <div class="filters-grid">
+                <div class="form-group">
+                    <label for="nombre">Nombre:</label>
+                    <input type="text" id="nombre" name="Nombre" class="form-control" placeholder="Buscar por nombre">
+                    <span class="error-message" id="error-Nombre"></span>
+                </div>
+                <div class="form-group">
+                    <label for="dni">DNI:</label>
+                    <input type="text" id="dni" name="Dni" class="form-control" placeholder="Buscar por DNI" maxlength="8">
+                    <span class="error-message" id="error-Dni"></span>
+                </div>
+                <div class="form-group">
+                    <label for="estado">Estado:</label>
+                    <select id="estado" name="Estado" class="form-control">
+                        <option value="">Todos</option>
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
+                    <span class="error-message" id="error-Estado"></span>
+                </div>
+                <div class="form-group">
+                    <label for="tipoPersonal">Tipo de personal:</label>
+                    <select id="tipoPersonal" name="TipoPersonal" class="form-control">
+                        <option value="">Todas las categorías</option>
+                    </select>
+                    <span class="error-message" id="error-TipoPersonal"></span>
+                </div>
+                <div class="form-group">
+                    <label for="consultorio">Consultorio:</label>
+                    <select id="consultorio" name="IdConsultorio" class="form-control">
+                        <option value="">Todos</option>
+                    </select>
+                    <span class="error-message" id="error-IdConsultorio"></span>
+                </div>
+            </div>
+            <div class="filters-actions">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <button type="button" class="btn btn-secondary" id="clearBtn">Limpiar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Add Button -->
+    <div class="add-section">
+        <button class="btn btn-success" id="addPersonalBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Agregar Personal
+        </button>
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-section">
+        <h3 class="section-title">Personal Registrado</h3>
+        <div class="table-responsive">
+            <table class="data-table" id="personalTable">
+                <thead>
+                    <tr>
+                        <th>DNI</th>
+                        <th>NOMBRES Y APELLIDOS</th>
+                        <th>CARGO</th>
+                        <th>ESTADO</th>
+                        <th>TELÉFONO</th>
+                        <th>ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="6" class="no-data">No se han aplicado filtros. Use los filtros para buscar personal.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/scriptPersonal.js" asp-append-version="true"></script>
+}

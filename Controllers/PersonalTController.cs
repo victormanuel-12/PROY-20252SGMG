@@ -26,7 +26,6 @@ namespace SGMG.Controllers
       _personalTecnicoService = personalTecnicoService;
     }
 
-
     [HttpGet]
     [Route("/personal-tecnico/{id}")]
     public async Task<GenericResponse<PersonalTecnico>> GetPersonalTecnicoById(int id)
