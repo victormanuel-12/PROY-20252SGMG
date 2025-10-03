@@ -16,11 +16,13 @@ namespace SGMG.Services.ServiceImpl
   public class EnfermeriaServiceImpl : IEnfermeriaService
   {
     private readonly IEnfermeriaRepository _enfermeriaRepository;
+    private readonly IPersonalTRepository _personalTRepository;
     private readonly ApplicationDbContext _context;
 
-    public EnfermeriaServiceImpl(IEnfermeriaRepository enfermeriaRepository, ApplicationDbContext context)
+    public EnfermeriaServiceImpl(IEnfermeriaRepository enfermeriaRepository, IPersonalTRepository personalTRepository, ApplicationDbContext context)
     {
       _enfermeriaRepository = enfermeriaRepository;
+      _personalTRepository = personalTRepository;
       _context = context;
     }
 
@@ -47,70 +49,52 @@ namespace SGMG.Services.ServiceImpl
       return new GenericResponse<Enfermeria>(true, enfermeria, "Registro de enfermería obtenido correctamente.");
     }
 
-    public async Task<GenericResponse<Enfermeria>> AddEnfermeriaAsync(EnfermeriaRequestDTO enfermeriaRequestDTO)
+    public async Task<GenericResponse<Enfermeria>> AddEnfermeriaAsync(EnfermeriaRequestDTO dto)
     {
-      if (enfermeriaRequestDTO == null)
-        return new GenericResponse<Enfermeria>(false, "El registro de enfermería no puede ser nulo.");
+      if (dto == null)
+        return new GenericResponse<Enfermeria>(false, "El registro no puede ser nulo.");
 
-      // ✅ Validar que el Consultorio existe (opcional pero recomendado)
-      if (enfermeriaRequestDTO.IdConsultorio > 0)
+      // Crear primero el personal técnico
+      var personal = MapToPersonalTecnico(dto);
+      _context.PersonalTecnicos.Add(personal);
+      await _context.SaveChangesAsync(); // genera el IdPersonal
+
+      var enfermeria = new Enfermeria
       {
-        var consultorioExiste = await _context.Consultorios
-            .AnyAsync(c => c.IdConsultorio == enfermeriaRequestDTO.IdConsultorio);
+        IdPersonal = personal.IdPersonal,
+        NumeroColegiaturaEnfermeria = dto.NumeroColegiaturaEnfermeria ?? "",
+        NivelProfesional = dto.NivelProfesional ?? "",
+        IdConsultorio = dto.IdConsultorio
+      };
 
-        if (!consultorioExiste)
-          return new GenericResponse<Enfermeria>(false,
-              $"No existe un consultorio con ID {enfermeriaRequestDTO.IdConsultorio}. Por favor, verifique el ID.");
-      }
-
-      // ✅ Validar que el Personal existe (opcional pero recomendado)
-      if (enfermeriaRequestDTO.IdPersonal.HasValue && enfermeriaRequestDTO.IdPersonal.Value > 0)
-      {
-        var personalExiste = await _context.PersonalTecnicos
-            .AnyAsync(p => p.IdPersonal == enfermeriaRequestDTO.IdPersonal.Value);
-
-        if (!personalExiste)
-          return new GenericResponse<Enfermeria>(false,
-              $"No existe personal con ID {enfermeriaRequestDTO.IdPersonal}. Por favor, verifique el ID.");
-      }
-
-      var enfermeria = MapToEnfermeria(enfermeriaRequestDTO);
-
-      // ❌ SIN try-catch - Deja que el GlobalExceptionFilter maneje los errores
       await _enfermeriaRepository.AddEnfermeriaAsync(enfermeria);
 
       return new GenericResponse<Enfermeria>(true, enfermeria, "Registro de enfermería agregado correctamente.");
     }
 
-    public async Task<GenericResponse<Enfermeria>> UpdateEnfermeriaAsync(EnfermeriaRequestDTO enfermeriaRequestDTO)
+    public async Task<GenericResponse<Enfermeria>> UpdateEnfermeriaAsync(EnfermeriaRequestDTO dto)
     {
-      if (enfermeriaRequestDTO == null || enfermeriaRequestDTO.IdEnfermeria <= 0)
-        return new GenericResponse<Enfermeria> { Success = false, Message = "El registro de enfermería no es válido.", Data = null };
+      if (dto == null || !dto.IdEnfermeria.HasValue)
+        return new GenericResponse<Enfermeria>(false, "El registro no es válido.");
 
-      var enfermeria = MapToEnfermeria(enfermeriaRequestDTO);
-      var existingEnfermeria = await _enfermeriaRepository.GetEnfermeriaByIdAsync(enfermeria.IdEnfermeria);
-
+      var existingEnfermeria = await _enfermeriaRepository.GetEnfermeriaByIdAsync(dto.IdEnfermeria.Value);
       if (existingEnfermeria == null)
-        return new GenericResponse<Enfermeria> { Success = false, Message = "Registro de enfermería no encontrado.", Data = null };
+        return new GenericResponse<Enfermeria>(false, "Registro de enfermería no encontrado.");
 
-      // ✅ Validaciones opcionales de FK antes de actualizar
-      if (enfermeriaRequestDTO.IdConsultorio > 0 && enfermeriaRequestDTO.IdConsultorio != existingEnfermeria.IdConsultorio)
-      {
-        var consultorioExiste = await _context.Consultorios
-            .AnyAsync(c => c.IdConsultorio == enfermeriaRequestDTO.IdConsultorio);
+      // Buscar y actualizar personal técnico asociado
+      var existingPersonal = await _context.PersonalTecnicos.FindAsync(existingEnfermeria.IdPersonal);
+      if (existingPersonal == null)
+        return new GenericResponse<Enfermeria>(false, "El personal asociado no existe.");
 
-        if (!consultorioExiste)
-          return new GenericResponse<Enfermeria>(false,
-              $"No existe un consultorio con ID {enfermeriaRequestDTO.IdConsultorio}.");
-      }
+      UpdatePersonalTecnico(existingPersonal, dto);
+      _context.PersonalTecnicos.Update(existingPersonal);
 
-      UpdateEnfermeriaProperties(existingEnfermeria, enfermeria);
-
-      // ❌ SIN try-catch
+      UpdateEnfermeriaProperties(existingEnfermeria, dto);
       await _enfermeriaRepository.UpdateEnfermeriaAsync(existingEnfermeria);
 
-      return new GenericResponse<Enfermeria> { Success = true, Message = "Registro de enfermería actualizado correctamente.", Data = existingEnfermeria };
+      return new GenericResponse<Enfermeria>(true, existingEnfermeria, "Registro actualizado correctamente.");
     }
+
 
     public async Task<GenericResponse<Enfermeria>> DeleteEnfermeriaAsync(int id)
     {
@@ -122,40 +106,101 @@ namespace SGMG.Services.ServiceImpl
       if (enfermeria == null)
         return new GenericResponse<Enfermeria>(false, "Registro de enfermería no encontrado.");
 
-      // ❌ SIN try-catch
+      // Buscar el personal técnico asociado
+      var personal = await _personalTRepository.GetPersonalTecnicoByIdAsync(enfermeria.IdPersonal);
+
+      if (personal != null)
+      {
+        await _personalTRepository.DeletePersonalTecnicoAsync(personal.IdPersonal);
+      }
+
+      // Eliminar primero el registro de enfermería
       await _enfermeriaRepository.DeleteEnfermeriaAsync(id);
 
-      return new GenericResponse<Enfermeria>(true, enfermeria, "Registro de enfermería eliminado correctamente.");
+      // Guardar cambios en la base de datos
+      await _context.SaveChangesAsync();
+
+      return new GenericResponse<Enfermeria>(true, enfermeria, "Registro de enfermería y personal asociado eliminados correctamente.");
     }
 
-    private Enfermeria MapToEnfermeria(EnfermeriaRequestDTO dto)
-    {
-      var enfermeria = new Enfermeria();
 
-      if (dto.IdEnfermeria.HasValue)
-        enfermeria.IdEnfermeria = dto.IdEnfermeria.Value;
-      if (dto.NumeroColegiaturaEnfermeria != null)
+    // ------------------- HELPERS -------------------
+    private PersonalTecnico MapToPersonalTecnico(EnfermeriaRequestDTO dto)
+    {
+      return new PersonalTecnico
+      {
+        NumeroDni = dto.NumeroDni ?? "",
+        Nombre = dto.Nombre ?? "",
+        ApellidoPaterno = dto.ApellidoPaterno ?? "",
+        ApellidoMaterno = dto.ApellidoMaterno ?? "",
+        FechaNacimiento = dto.FechaNacimiento ?? DateTime.MinValue,
+        Sexo = dto.Sexo ?? "",
+        Direccion = dto.Direccion ?? "",
+        Telefono = dto.Telefono ?? "",
+        Email = dto.Email ?? "",
+        EstadoLaboral = dto.EstadoLaboral ?? "",
+        FechaIngreso = dto.FechaIngreso ?? DateTime.Now,
+        Turno = dto.Turno ?? "",
+        AreaServicio = dto.AreaServicio ?? "",
+        Cargo = dto.Cargo ?? ""
+      };
+    }
+
+    private void UpdatePersonalTecnico(PersonalTecnico personal, EnfermeriaRequestDTO dto)
+    {
+      if (!string.IsNullOrWhiteSpace(dto.NumeroDni))
+        personal.NumeroDni = dto.NumeroDni;
+
+      if (!string.IsNullOrWhiteSpace(dto.Nombre))
+        personal.Nombre = dto.Nombre;
+
+      if (!string.IsNullOrWhiteSpace(dto.ApellidoPaterno))
+        personal.ApellidoPaterno = dto.ApellidoPaterno;
+
+      if (!string.IsNullOrWhiteSpace(dto.ApellidoMaterno))
+        personal.ApellidoMaterno = dto.ApellidoMaterno;
+
+      if (!string.IsNullOrWhiteSpace(dto.Sexo))
+        personal.Sexo = dto.Sexo;
+
+      if (dto.FechaNacimiento.HasValue && dto.FechaNacimiento != default)
+        personal.FechaNacimiento = dto.FechaNacimiento.Value;
+
+      if (!string.IsNullOrWhiteSpace(dto.Direccion))
+        personal.Direccion = dto.Direccion;
+
+      if (!string.IsNullOrWhiteSpace(dto.Telefono))
+        personal.Telefono = dto.Telefono;
+
+      if (!string.IsNullOrWhiteSpace(dto.Email))
+        personal.Email = dto.Email;
+
+      if (!string.IsNullOrWhiteSpace(dto.EstadoLaboral))
+        personal.EstadoLaboral = dto.EstadoLaboral;
+
+      if (dto.FechaIngreso.HasValue && dto.FechaIngreso != default)
+        personal.FechaIngreso = dto.FechaIngreso.Value;
+
+      if (!string.IsNullOrWhiteSpace(dto.Turno))
+        personal.Turno = dto.Turno;
+
+      if (!string.IsNullOrWhiteSpace(dto.AreaServicio))
+        personal.AreaServicio = dto.AreaServicio;
+
+      if (!string.IsNullOrWhiteSpace(dto.Cargo))
+        personal.Cargo = dto.Cargo;
+    }
+
+    private void UpdateEnfermeriaProperties(Enfermeria enfermeria, EnfermeriaRequestDTO dto)
+    {
+      if (!string.IsNullOrWhiteSpace(dto.NumeroColegiaturaEnfermeria))
         enfermeria.NumeroColegiaturaEnfermeria = dto.NumeroColegiaturaEnfermeria;
-      if (dto.NivelProfesional != null)
+
+      if (!string.IsNullOrWhiteSpace(dto.NivelProfesional))
         enfermeria.NivelProfesional = dto.NivelProfesional;
-      if (dto.IdConsultorio > 0)
-        enfermeria.IdConsultorio = dto.IdConsultorio;
-      if (dto.IdPersonal.HasValue)
-        enfermeria.IdPersonal = dto.IdPersonal.Value;
 
-      return enfermeria;
-    }
-
-    private void UpdateEnfermeriaProperties(Enfermeria existing, Enfermeria updated)
-    {
-      if (!string.IsNullOrEmpty(updated.NumeroColegiaturaEnfermeria))
-        existing.NumeroColegiaturaEnfermeria = updated.NumeroColegiaturaEnfermeria;
-      if (!string.IsNullOrEmpty(updated.NivelProfesional))
-        existing.NivelProfesional = updated.NivelProfesional;
-      if (updated.IdConsultorio > 0)
-        existing.IdConsultorio = updated.IdConsultorio;
-      if (updated.IdPersonal > 0)
-        existing.IdPersonal = updated.IdPersonal;
+      if (dto.IdConsultorio.HasValue)
+        enfermeria.IdConsultorio = dto.IdConsultorio.Value;
     }
   }
 }

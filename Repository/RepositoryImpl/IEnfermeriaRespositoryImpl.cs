@@ -7,6 +7,8 @@ using SGMG.Models;
 using SGMG.Repository;
 using SGMG.Data;
 using SGMG.Dtos.Response;
+using SGMG.Dtos.Request;
+
 
 namespace SGMG.Repository.RepositoryImpl
 {
@@ -38,7 +40,9 @@ namespace SGMG.Repository.RepositoryImpl
 
     public async Task<Enfermeria?> GetEnfermeriaByIdAsync(int id)
     {
-      return await _context.Enfermerias.FindAsync(id);
+      return await _context.Enfermerias
+          .Include(e => e.Personal)
+          .FirstOrDefaultAsync(e => e.IdEnfermeria == id);
     }
 
     public async Task AddEnfermeriaAsync(Enfermeria enfermeria)

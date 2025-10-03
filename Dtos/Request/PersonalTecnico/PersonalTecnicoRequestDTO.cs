@@ -42,7 +42,7 @@ namespace SGMG.Dtos.Request.PersonalTecnico
     [RegularExpression(@"^\+?[0-9]{7,15}$", ErrorMessage = "El teléfono solo puede contener números y opcionalmente el símbolo + al inicio")]
     public string? Telefono { get; set; }
 
-    [EmailAddress(ErrorMessage = "El formato del email no es válido")]
+
     [StringLength(100, ErrorMessage = "El email no puede exceder 100 caracteres")]
     [RegularExpression(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", ErrorMessage = "El formato del email no es válido")]
     public string? Email { get; set; }

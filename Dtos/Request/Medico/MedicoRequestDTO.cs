@@ -8,7 +8,8 @@ namespace SGMG.Dtos.Request.Medico
 {
   public class MedicoRequestDTO
   {
-    public int IdMedico { get; set; }
+    public int? IdMedico { get; set; }
+
     [Required(ErrorMessage = "El número de DNI es obligatorio")]
     [RegularExpression(@"^[0-9]{8}$", ErrorMessage = "El DNI debe contener solo 8 dígitos")]
     public string NumeroDni { get; set; } = "";
@@ -75,6 +76,7 @@ namespace SGMG.Dtos.Request.Medico
     [StringLength(20, MinimumLength = 5, ErrorMessage = "El número de colegiatura debe tener entre 5 y 20 caracteres")]
     [RegularExpression(@"^[A-Z0-9]+$", ErrorMessage = "El número de colegiatura solo puede contener letras mayúsculas y números")]
     public string NumeroColegiatura { get; set; } = "";
+
 
     [Required(ErrorMessage = "El tipo de médico es obligatorio")]
     [RegularExpression("^(General|Especialista|Residente|Interno)$", ErrorMessage = "El tipo de médico debe ser: General, Especialista, Residente o Interno")]

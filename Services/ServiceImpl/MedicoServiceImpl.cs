@@ -59,7 +59,8 @@ namespace SGMG.Services.ServiceImpl
       {
         if (medicoRequestDTO == null)
           return new GenericResponse<Medico> { Success = false, Message = "El médico no puede ser nulo.", Data = null };
-        var medico = MapToMedico(medicoRequestDTO);
+
+        var medico = MapToMedicoAdd(medicoRequestDTO);
         await _medicoRepository.AddMedicoAsync(medico);
         return new GenericResponse<Medico> { Success = true, Message = "Médico registrado exitosamente.", Data = medico };
       }
@@ -75,12 +76,13 @@ namespace SGMG.Services.ServiceImpl
       {
         if (medicoRequestDTO == null || medicoRequestDTO.IdMedico <= 0)
           return new GenericResponse<Medico> { Success = false, Message = "El médico no es válido.", Data = null };
-        var medicoExistente = await _medicoRepository.GetMedicoByIdAsync(medicoRequestDTO.IdMedico);
+        var medicoExistente = await _medicoRepository.GetMedicoByIdAsync(medicoRequestDTO.IdMedico.Value);
         if (medicoExistente == null)
           return new GenericResponse<Medico> { Success = false, Message = "Médico no encontrado.", Data = null };
-        var medico = MapToMedico(medicoRequestDTO);
-        await _medicoRepository.UpdateMedicoAsync(medico);
-        return new GenericResponse<Medico> { Success = true, Message = "Médico actualizado correctamente.", Data = medico };
+
+        MapToMedico(medicoRequestDTO, medicoExistente);
+        await _medicoRepository.UpdateMedicoAsync(medicoExistente);
+        return new GenericResponse<Medico> { Success = true, Message = "Médico actualizado correctamente.", Data = medicoExistente };
       }
       catch (Exception ex)
       {
@@ -106,34 +108,63 @@ namespace SGMG.Services.ServiceImpl
       }
     }
 
-    private Medico MapToMedico(MedicoRequestDTO dto)
+    private void MapToMedico(MedicoRequestDTO dto, Medico medico)
     {
-      var medico = new Medico
-      {
-        NumeroDni = dto.NumeroDni,
-        Nombre = dto.Nombre,
-        ApellidoPaterno = dto.ApellidoPaterno,
-        Sexo = dto.Sexo,
-        FechaNacimiento = dto.FechaNacimiento,
-        CorreoElectronico = dto.CorreoElectronico,
-        EstadoLaboral = dto.EstadoLaboral,
-        FechaIngreso = dto.FechaIngreso,
-        Turno = dto.Turno,
-        AreaServicio = dto.AreaServicio,
-        CargoMedico = dto.CargoMedico,
-        NumeroColegiatura = dto.NumeroColegiatura,
-        TipoMedico = dto.TipoMedico,
-      };
-      if (dto.ApellidoMaterno != null)
+      // Solo actualizamos los campos si el DTO trae valores válidos
+
+      if (!string.IsNullOrWhiteSpace(dto.NumeroDni))
+        medico.NumeroDni = dto.NumeroDni;
+
+      if (!string.IsNullOrWhiteSpace(dto.Nombre))
+        medico.Nombre = dto.Nombre;
+
+      if (!string.IsNullOrWhiteSpace(dto.ApellidoPaterno))
+        medico.ApellidoPaterno = dto.ApellidoPaterno;
+
+      if (!string.IsNullOrWhiteSpace(dto.ApellidoMaterno))
         medico.ApellidoMaterno = dto.ApellidoMaterno;
-      if (dto.Direccion != null)
+
+      if (!string.IsNullOrWhiteSpace(dto.Sexo))
+        medico.Sexo = dto.Sexo;
+
+      if (dto.FechaNacimiento != default)
+        medico.FechaNacimiento = dto.FechaNacimiento;
+
+      if (!string.IsNullOrWhiteSpace(dto.CorreoElectronico))
+        medico.CorreoElectronico = dto.CorreoElectronico;
+
+      if (!string.IsNullOrWhiteSpace(dto.EstadoLaboral))
+        medico.EstadoLaboral = dto.EstadoLaboral;
+
+      if (dto.FechaIngreso != default)
+        medico.FechaIngreso = dto.FechaIngreso;
+
+      if (!string.IsNullOrWhiteSpace(dto.Turno))
+        medico.Turno = dto.Turno;
+
+      if (!string.IsNullOrWhiteSpace(dto.AreaServicio))
+        medico.AreaServicio = dto.AreaServicio;
+
+      if (!string.IsNullOrWhiteSpace(dto.CargoMedico))
+        medico.CargoMedico = dto.CargoMedico;
+
+      if (!string.IsNullOrWhiteSpace(dto.NumeroColegiatura))
+        medico.NumeroColegiatura = dto.NumeroColegiatura;
+
+      if (!string.IsNullOrWhiteSpace(dto.TipoMedico))
+        medico.TipoMedico = dto.TipoMedico;
+
+      if (!string.IsNullOrWhiteSpace(dto.Direccion))
         medico.Direccion = dto.Direccion;
-      if (dto.Telefono != null)
+
+      if (!string.IsNullOrWhiteSpace(dto.Telefono))
         medico.Telefono = dto.Telefono;
-      if (dto.IdConsultorio != null)
-        medico.IdConsultorio = dto.IdConsultorio;
-      return medico;
+
+      if (dto.IdConsultorio.HasValue && dto.IdConsultorio.Value > 0)
+        medico.IdConsultorio = dto.IdConsultorio.Value;
     }
+
+
     private MedicoRequestDTO MapToMedicoRequestDTO(Medico medico)
     {
       return new MedicoRequestDTO
@@ -157,5 +188,68 @@ namespace SGMG.Services.ServiceImpl
         IdConsultorio = medico.IdConsultorio
       };
     }
+
+
+
+    private Medico MapToMedicoAdd(MedicoRequestDTO dto)
+    {
+      var medico = new Medico();
+
+      // Evaluación para cadenas obligatorias
+      if (!string.IsNullOrWhiteSpace(dto.NumeroDni))
+        medico.NumeroDni = dto.NumeroDni;
+
+      if (!string.IsNullOrWhiteSpace(dto.Nombre))
+        medico.Nombre = dto.Nombre;
+
+      if (!string.IsNullOrWhiteSpace(dto.ApellidoPaterno))
+        medico.ApellidoPaterno = dto.ApellidoPaterno;
+
+      if (!string.IsNullOrWhiteSpace(dto.ApellidoMaterno))
+        medico.ApellidoMaterno = dto.ApellidoMaterno;
+
+      if (!string.IsNullOrWhiteSpace(dto.Sexo))
+        medico.Sexo = dto.Sexo;
+
+      if (dto.FechaNacimiento != default)
+        medico.FechaNacimiento = dto.FechaNacimiento;
+
+      if (!string.IsNullOrWhiteSpace(dto.CorreoElectronico))
+        medico.CorreoElectronico = dto.CorreoElectronico;
+
+      if (!string.IsNullOrWhiteSpace(dto.EstadoLaboral))
+        medico.EstadoLaboral = dto.EstadoLaboral;
+
+      if (dto.FechaIngreso != default)
+        medico.FechaIngreso = dto.FechaIngreso;
+
+      if (!string.IsNullOrWhiteSpace(dto.Turno))
+        medico.Turno = dto.Turno;
+
+      if (!string.IsNullOrWhiteSpace(dto.AreaServicio))
+        medico.AreaServicio = dto.AreaServicio;
+
+      if (!string.IsNullOrWhiteSpace(dto.CargoMedico))
+        medico.CargoMedico = dto.CargoMedico;
+
+      if (!string.IsNullOrWhiteSpace(dto.NumeroColegiatura))
+        medico.NumeroColegiatura = dto.NumeroColegiatura;
+
+      if (!string.IsNullOrWhiteSpace(dto.TipoMedico))
+        medico.TipoMedico = dto.TipoMedico;
+
+      // Campos opcionales
+      if (!string.IsNullOrWhiteSpace(dto.Direccion))
+        medico.Direccion = dto.Direccion;
+
+      if (!string.IsNullOrWhiteSpace(dto.Telefono))
+        medico.Telefono = dto.Telefono;
+
+      if (dto.IdConsultorio.HasValue && dto.IdConsultorio.Value > 0)
+        medico.IdConsultorio = dto.IdConsultorio.Value;
+
+      return medico;
+    }
+
   }
 }

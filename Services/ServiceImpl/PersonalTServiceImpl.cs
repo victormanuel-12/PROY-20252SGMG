@@ -16,13 +16,13 @@ namespace SGMG.Services.ServiceImpl
   public class PersonalTServiceImpl : IPersonalTservice
   {
     private readonly IPersonalTRepository _personalTecnicoRepository;
+    private readonly ILogger<PersonalTServiceImpl> _logger;
 
-    public PersonalTServiceImpl(IPersonalTRepository personalTecnicoRepository)
+    public PersonalTServiceImpl(IPersonalTRepository personalTecnicoRepository, ILogger<PersonalTServiceImpl> logger)
     {
       _personalTecnicoRepository = personalTecnicoRepository;
+      _logger = logger;
     }
-
-
 
     public async Task<GenericResponse<PersonalTecnico>> GetPersonalTecnicoByIdAsync(int id)
     {
@@ -33,11 +33,13 @@ namespace SGMG.Services.ServiceImpl
         var personalTecnico = await _personalTecnicoRepository.GetPersonalTecnicoByIdAsync(id);
         if (personalTecnico == null)
           return new GenericResponse<PersonalTecnico>(false, "Registro de personal técnico no encontrado.");
+        if (!personalTecnico.Cargo.Contains("ADMINISTRADOR") && !personalTecnico.Cargo.Contains("CAJERO"))
+          return new GenericResponse<PersonalTecnico>(false, "El registro no corresponde a un personal técnico.");
         return new GenericResponse<PersonalTecnico>(true, personalTecnico, "Registro de personal técnico obtenido correctamente.");
       }
       catch (Exception ex)
       {
-        return new GenericResponse<PersonalTecnico> { Success = false, Message = $"Error al obtener el registro de personal técnico con ID: {id}", Data = null };
+        throw new GenericException("Error al obtener el registro de personal técnico: ", ex);
       }
     }
 
@@ -61,21 +63,36 @@ namespace SGMG.Services.ServiceImpl
     {
       try
       {
-        if (personalTecnicoRequestDTO == null || personalTecnicoRequestDTO.IdPersonalT <= 0)
-          return new GenericResponse<PersonalTecnico> { Success = false, Message = "El registro de personal técnico no es válido.", Data = null };
-        var personalTecnico = MapToPersonalTecnico(personalTecnicoRequestDTO);
-        var existingPersonalTecnico = await _personalTecnicoRepository.GetPersonalTecnicoByIdAsync(personalTecnico.IdPersonal);
-        if (existingPersonalTecnico == null)
-          return new GenericResponse<PersonalTecnico> { Success = false, Message = "Registro de personal técnico no encontrado.", Data = null };
+        _logger.LogInformation("Iniciando actualización de PersonalTecnico con ID: {Id}", personalTecnicoRequestDTO?.IdPersonalT);
 
-        // Actualizar propiedades del registro existente
+        if (personalTecnicoRequestDTO == null || personalTecnicoRequestDTO.IdPersonalT <= 0)
+        {
+          _logger.LogWarning("Solicitud inválida para actualización de PersonalTecnico.");
+          return new GenericResponse<PersonalTecnico> { Success = false, Message = "El registro de personal técnico no es válido.", Data = null };
+        }
+
+        var personalTecnico = MapToPersonalTecnico(personalTecnicoRequestDTO);
+        _logger.LogInformation("Datos mapeados para PersonalTecnico con ID: {Id}", personalTecnico.IdPersonal);
+        var existingPersonalTecnico = await _personalTecnicoRepository.GetPersonalTecnicoByIdAsync(personalTecnico.IdPersonal);
+
+        if (existingPersonalTecnico == null)
+        {
+          _logger.LogWarning("No se encontró el registro de PersonalTecnico con ID: {Id}", personalTecnico.IdPersonal);
+          return new GenericResponse<PersonalTecnico> { Success = false, Message = "Registro de personal técnico no encontrado.", Data = null };
+        }
+
+        // Actualizar propiedades
         UpdatePersonalTecnicoProperties(existingPersonalTecnico, personalTecnico);
 
         await _personalTecnicoRepository.UpdatePersonalTecnicoAsync(existingPersonalTecnico);
+
+        _logger.LogInformation("Actualización exitosa de PersonalTecnico con ID: {Id}", existingPersonalTecnico.IdPersonal);
+
         return new GenericResponse<PersonalTecnico> { Success = true, Message = "Registro de personal técnico actualizado correctamente.", Data = existingPersonalTecnico };
       }
       catch (Exception ex)
       {
+        _logger.LogError(ex, "Error al actualizar el registro de PersonalTecnico con ID: {Id}", personalTecnicoRequestDTO?.IdPersonalT);
         return new GenericResponse<PersonalTecnico> { Success = false, Message = "Error al actualizar el registro de personal técnico: " + ex.Message, Data = null };
       }
     }
@@ -86,10 +103,20 @@ namespace SGMG.Services.ServiceImpl
       {
         if (id <= 0)
           return new GenericResponse<PersonalTecnico>(false, "El ID no es válido.");
+
         var personalTecnico = await _personalTecnicoRepository.GetPersonalTecnicoByIdAsync(id);
         if (personalTecnico == null)
           return new GenericResponse<PersonalTecnico>(false, "Registro de personal técnico no encontrado.");
+
+        // Validar el cargo antes de eliminar
+        if (!personalTecnico.Cargo.Equals("ADMINISTRADOR", StringComparison.OrdinalIgnoreCase) &&
+            !personalTecnico.Cargo.Equals("CAJERO", StringComparison.OrdinalIgnoreCase))
+        {
+          return new GenericResponse<PersonalTecnico>(false, "Solo se pueden eliminar registros de personal con cargo ADMINISTRADOR o CAJERO.");
+        }
+
         await _personalTecnicoRepository.DeletePersonalTecnicoAsync(id);
+
         return new GenericResponse<PersonalTecnico>(true, personalTecnico, "Registro de personal técnico eliminado correctamente.");
       }
       catch (Exception ex)
@@ -97,6 +124,7 @@ namespace SGMG.Services.ServiceImpl
         return new GenericResponse<PersonalTecnico>(false, $"Error al eliminar el registro de personal técnico con ID {id}: {ex.Message}");
       }
     }
+
 
     private PersonalTecnico MapToPersonalTecnico(PersonalTecnicoRequestDTO dto)
     {
