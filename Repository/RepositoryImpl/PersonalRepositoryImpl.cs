@@ -34,7 +34,9 @@ namespace SGMG.Repository.RepositoryImpl
      .CountAsync();
       var consultorios = await _context.Consultorios.CountAsync();
       var cargos = await _context.Cargos.ToListAsync();
-      return new ResumenPersonalResponse { MedicosActivos = medicosActivos, TecnicosActivos = tecnicosActivos, Consultorios = consultorios, PersonalCaja = personalCaja, Cargos = cargos };
+      var consultoriosList = await _context.Consultorios.ToListAsync();
+
+      return new ResumenPersonalResponse { MedicosActivos = medicosActivos, TecnicosActivos = tecnicosActivos, Consultorios = consultorios, PersonalCaja = personalCaja, Cargos = cargos, ConsultoriosList = consultoriosList };
     }
 
     public async Task<IEnumerable<PersonalRegistradoResponse>> BuscarPersonalAsync(PersonalFiltroRequest filtro)

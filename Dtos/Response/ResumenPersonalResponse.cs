@@ -14,5 +14,6 @@ namespace SGMG.Dtos.Response
     public int PersonalCaja { get; set; }
 
     public List<Cargos>? Cargos { get; set; }
+    public List<Consultorio>? ConsultoriosList { get; set; }
   }
 }
