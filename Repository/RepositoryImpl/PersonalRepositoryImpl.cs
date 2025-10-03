@@ -43,18 +43,14 @@ namespace SGMG.Repository.RepositoryImpl
     {
       var resultado = new List<PersonalRegistradoResponse>();
 
-      // Determinar qué tablas consultar según TipoPersonal
-      bool buscarMedicos = filtro.TipoPersonal?.Equals("Medico General", StringComparison.OrdinalIgnoreCase) == true;
-      bool buscarEnfermeria = filtro.TipoPersonal?.Equals("Enfermeria", StringComparison.OrdinalIgnoreCase) == true;
-      bool buscarAdministrador = filtro.TipoPersonal?.Equals("Administrador", StringComparison.OrdinalIgnoreCase) == true;
-      bool buscarCajero = filtro.TipoPersonal?.Equals("Cajero", StringComparison.OrdinalIgnoreCase) == true;
+      bool buscarTodos = filtro.TipoPersonal?.Equals("TODOS", StringComparison.OrdinalIgnoreCase) == true;
 
       // BUSCAR EN MÉDICOS
-      if (buscarMedicos)
+      if (buscarTodos || filtro.TipoPersonal?.Equals("Medico General", StringComparison.OrdinalIgnoreCase) == true)
       {
         var queryMedicos = _context.Medicos.AsQueryable();
 
-        if (filtro.IdConsultorio.HasValue)
+        if (filtro.IdConsultorio.HasValue && filtro.IdConsultorio.Value != 0)
         {
           queryMedicos = queryMedicos.Where(m => m.IdConsultorio == filtro.IdConsultorio.Value);
         }
@@ -85,15 +81,18 @@ namespace SGMG.Repository.RepositoryImpl
       }
 
       // BUSCAR EN ENFERMERÍA
-      if (buscarEnfermeria)
+      if (buscarTodos || filtro.TipoPersonal?.Equals("Enfermeria", StringComparison.OrdinalIgnoreCase) == true)
       {
         var queryEnfermeria = _context.Enfermerias
-    .Include(e => e.Personal)
-    .Where(e => e.Personal.Cargo.ToUpper().Contains("ENFERMERIA"))
-    .AsQueryable();
+            .Include(e => e.Personal)
+            .AsQueryable();
 
+        if (!buscarTodos)
+        {
+          queryEnfermeria = queryEnfermeria.Where(e => e.Personal.Cargo.ToUpper().Contains("ENFERMERIA"));
+        }
 
-        if (filtro.IdConsultorio.HasValue)
+        if (filtro.IdConsultorio.HasValue && filtro.IdConsultorio.Value != 0)
         {
           queryEnfermeria = queryEnfermeria.Where(e => e.IdConsultorio == filtro.IdConsultorio.Value);
         }
@@ -122,26 +121,31 @@ namespace SGMG.Repository.RepositoryImpl
           Telefono = e.Telefono
         }));
       }
+      // Solo buscar personal técnico (Administrador/Cajero) si no se filtró por consultorio
+      bool buscarPersonalTecnico = (!filtro.IdConsultorio.HasValue || filtro.IdConsultorio.Value == 0);
 
       // BUSCAR EN PERSONAL TÉCNICO: ADMINISTRADOR
-      if (buscarAdministrador)
+      if ((buscarTodos || filtro.TipoPersonal?.Equals("Administrador", StringComparison.OrdinalIgnoreCase) == true)
+          && buscarPersonalTecnico) // <-- solo si no hay IdConsultorio
       {
-        var tecnicos = await _context.PersonalTecnicos
-            .Where(pt => pt.Cargo.ToUpper().Contains("ADMINISTRADOR"))
-            .Select(pt => new
-            {
-              Id = pt.IdPersonal,
-              Dni = pt.NumeroDni,
-              Nombre = pt.Nombre,
-              ApellidoPaterno = pt.ApellidoPaterno,
-              ApellidoMaterno = pt.ApellidoMaterno,
-              Cargo = pt.Cargo,
-              Estado = pt.EstadoLaboral,
-              Telefono = pt.Telefono
-            })
-            .ToListAsync();
+        var tecnicos = _context.PersonalTecnicos.AsQueryable();
 
-        resultado.AddRange(tecnicos.Select(t => new PersonalRegistradoResponse
+        if (!buscarTodos)
+          tecnicos = tecnicos.Where(pt => pt.Cargo.ToUpper().Contains("ADMINISTRADOR"));
+
+        var list = await tecnicos.Select(pt => new
+        {
+          Id = pt.IdPersonal,
+          Dni = pt.NumeroDni,
+          Nombre = pt.Nombre,
+          ApellidoPaterno = pt.ApellidoPaterno,
+          ApellidoMaterno = pt.ApellidoMaterno,
+          Cargo = pt.Cargo,
+          Estado = pt.EstadoLaboral,
+          Telefono = pt.Telefono
+        }).ToListAsync();
+
+        resultado.AddRange(list.Select(t => new PersonalRegistradoResponse
         {
           Id = t.Id,
           Dni = t.Dni,
@@ -153,24 +157,27 @@ namespace SGMG.Repository.RepositoryImpl
       }
 
       // BUSCAR EN PERSONAL TÉCNICO: CAJERO
-      if (buscarCajero)
+      if ((buscarTodos || filtro.TipoPersonal?.Equals("Cajero", StringComparison.OrdinalIgnoreCase) == true)
+          && buscarPersonalTecnico) // <-- solo si no hay IdConsultorio
       {
-        var tecnicos = await _context.PersonalTecnicos
-            .Where(pt => pt.Cargo.ToUpper().Contains("CAJERO"))
-            .Select(pt => new
-            {
-              Id = pt.IdPersonal,
-              Dni = pt.NumeroDni,
-              Nombre = pt.Nombre,
-              ApellidoPaterno = pt.ApellidoPaterno,
-              ApellidoMaterno = pt.ApellidoMaterno,
-              Cargo = pt.Cargo,
-              Estado = pt.EstadoLaboral,
-              Telefono = pt.Telefono
-            })
-            .ToListAsync();
+        var tecnicos = _context.PersonalTecnicos.AsQueryable();
 
-        resultado.AddRange(tecnicos.Select(t => new PersonalRegistradoResponse
+        if (!buscarTodos)
+          tecnicos = tecnicos.Where(pt => pt.Cargo.ToUpper().Contains("CAJERO"));
+
+        var list = await tecnicos.Select(pt => new
+        {
+          Id = pt.IdPersonal,
+          Dni = pt.NumeroDni,
+          Nombre = pt.Nombre,
+          ApellidoPaterno = pt.ApellidoPaterno,
+          ApellidoMaterno = pt.ApellidoMaterno,
+          Cargo = pt.Cargo,
+          Estado = pt.EstadoLaboral,
+          Telefono = pt.Telefono
+        }).ToListAsync();
+
+        resultado.AddRange(list.Select(t => new PersonalRegistradoResponse
         {
           Id = t.Id,
           Dni = t.Dni,
@@ -181,29 +188,29 @@ namespace SGMG.Repository.RepositoryImpl
         }));
       }
 
+
       // FILTROS GENERALES
-      var query = resultado.AsQueryable();
+      var queryFinal = resultado.AsQueryable();
 
       if (!string.IsNullOrEmpty(filtro.Dni))
       {
-        query = query.Where(p => p.Dni.Contains(filtro.Dni));
+        queryFinal = queryFinal.Where(p => p.Dni.Contains(filtro.Dni));
       }
 
       if (!string.IsNullOrEmpty(filtro.Estado))
       {
-        query = query.Where(p =>
-            p.Estado.Equals(filtro.Estado, StringComparison.OrdinalIgnoreCase));
+        queryFinal = queryFinal.Where(p => p.Estado.Equals(filtro.Estado, StringComparison.OrdinalIgnoreCase));
       }
 
       if (!string.IsNullOrEmpty(filtro.Nombre))
       {
         var nombreUpper = filtro.Nombre.ToUpper();
-        query = query.Where(p =>
-            p.NombresApellidos.ToUpper().Contains(nombreUpper));
+        queryFinal = queryFinal.Where(p => p.NombresApellidos.ToUpper().Contains(nombreUpper));
       }
 
-      return query.OrderBy(p => p.NombresApellidos).ToList();
+      return queryFinal.OrderBy(p => p.NombresApellidos).ToList();
     }
+
 
   }
 }

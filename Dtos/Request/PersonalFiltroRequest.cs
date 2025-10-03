@@ -16,7 +16,7 @@ namespace SGMG.Dtos.Request
     [RegularExpression("^(Activo|Inactivo)$", ErrorMessage = "El estado debe ser 'Activo' o 'Inactivo'.")]
     public string? Estado { get; set; }
 
-    [RegularExpression("^(MEDICO GENERAL|ENFERMERIA|CAJERO|ADMINISTRADOR)$", ErrorMessage = "El tipo de personal debe ser: MEDICO GENERAL, ENFERMERIA, CAJERO o ADMINISTRADOR.")]
+    [RegularExpression("^(MEDICO GENERAL|ENFERMERIA|CAJERO|ADMINISTRADOR|TODOS)$", ErrorMessage = "El tipo de personal debe ser: MEDICO GENERAL, ENFERMERIA, CAJERO, ADMINISTRADOR o TODOS.")]
     public string? TipoPersonal { get; set; }
 
     [Range(1, int.MaxValue, ErrorMessage = "El IdConsultorio debe ser un número entero positivo.")]

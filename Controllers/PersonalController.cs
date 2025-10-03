@@ -34,7 +34,10 @@ namespace SGMG.Controllers
     [HttpPost]
     [Route("/personal/buscar")]
     public async Task<ActionResult<GenericResponse<IEnumerable<PersonalRegistradoResponse>>>> BuscarPersonal([FromBody] PersonalFiltroRequest filtro)
+
     {
+      _logger.LogInformation("Iniciando búsqueda de personal con los siguientes filtros: {@filtro}", filtro);
+      _logger.LogInformation("TipoPersonal: {TipoPersonal}, IdConsultorio: {IdConsultorio}", filtro.TipoPersonal, filtro.IdConsultorio);
       return await _personalService.BuscarPersonalAsync(filtro);
     }
 
