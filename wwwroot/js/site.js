@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
       sidebar.classList.remove("visible");
     } else {
       sidebar.classList.remove("hidden");
+      sidebar.classList.add("visible");
     }
   }
 
@@ -41,7 +42,6 @@ document.addEventListener("DOMContentLoaded", function () {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", function () {
       if (confirm("¿Está seguro que desea cerrar sesión?")) {
-        // Add logout logic here
         window.location.href = "/Account/Logout";
       }
     });
@@ -76,6 +76,8 @@ document.addEventListener("DOMContentLoaded", function () {
 // Alert Functions
 function showAlert(message, type = "success") {
   const alertContainer = document.getElementById("alertContainer");
+  if (!alertContainer) return;
+
   const alert = document.createElement("div");
   alert.className = `alert alert-${type}`;
 
@@ -85,10 +87,10 @@ function showAlert(message, type = "success") {
       : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
 
   alert.innerHTML = `
-        ${icon}
-        <span>${message}</span>
-        <button class="alert-close" onclick="this.parentElement.remove()">×</button>
-    `;
+    ${icon}
+    <span>${message}</span>
+    <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+  `;
 
   alertContainer.appendChild(alert);
 

@@ -69,14 +69,13 @@ namespace SGMG.Dtos.Request.Medico
 
     [Required(ErrorMessage = "El cargo médico es obligatorio")]
     [StringLength(100, ErrorMessage = "El cargo médico no puede exceder 100 caracteres")]
-    [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$", ErrorMessage = "El cargo médico solo puede contener letras y espacios")]
+    [RegularExpression(@"^[A-ZáéíóúÁÉÍÓÚñÑ\s]+$", ErrorMessage = "El cargo médico solo puede contener letras mayúsculas y espacios")]
     public string CargoMedico { get; set; } = "";
 
     [Required(ErrorMessage = "El número de colegiatura es obligatorio")]
     [StringLength(20, MinimumLength = 5, ErrorMessage = "El número de colegiatura debe tener entre 5 y 20 caracteres")]
-    [RegularExpression(@"^[A-Z0-9]+$", ErrorMessage = "El número de colegiatura solo puede contener letras mayúsculas y números")]
+    [RegularExpression(@"^[A-Z0-9\-]+$", ErrorMessage = "El número de colegiatura solo puede contener letras mayúsculas, números y guiones")]
     public string NumeroColegiatura { get; set; } = "";
-
 
     [Required(ErrorMessage = "El tipo de médico es obligatorio")]
     [RegularExpression("^(General|Especialista|Residente|Interno)$", ErrorMessage = "El tipo de médico debe ser: General, Especialista, Residente o Interno")]

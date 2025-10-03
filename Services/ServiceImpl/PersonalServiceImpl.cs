@@ -14,10 +14,12 @@ namespace SGMG.Services.ServiceImpl
   public class PersonalServiceImpl : IPersonalService
   {
     private readonly IPersonalRepository _personalRepository;
+    private readonly ILogger<PersonalServiceImpl> _logger;
 
-    public PersonalServiceImpl(IPersonalRepository personalRepository)
+    public PersonalServiceImpl(IPersonalRepository personalRepository, ILogger<PersonalServiceImpl> logger)
     {
       _personalRepository = personalRepository;
+      _logger = logger;
     }
 
     public async Task<GenericResponse<ResumenPersonalResponse>> GetResumenPersonalAsync()
@@ -27,6 +29,17 @@ namespace SGMG.Services.ServiceImpl
         var resumen = await _personalRepository.GetResumenPersonalAsync();
         if (resumen == null)
           return new GenericResponse<ResumenPersonalResponse>(false, "No se pudo obtener el resumen del personal.");
+
+        // Logging detallado de cada propiedad
+        _logger.LogInformation(
+            "ResumenPersonalResponse: MedicosActivos={MedicosActivos}, TecnicosActivos={TecnicosActivos}, Consultorios={Consultorios}, PersonalCaja={PersonalCaja}, TotalCargos={TotalCargos}, TotalConsultoriosList={TotalConsultoriosList}",
+            resumen.MedicosActivos,
+            resumen.TecnicosActivos,
+            resumen.Consultorios,
+            resumen.PersonalCaja,
+            resumen.Cargos?.Count ?? 0,
+            resumen.ConsultoriosList?.Count ?? 0
+        );
         return new GenericResponse<ResumenPersonalResponse>(true, resumen, "Resumen del personal obtenido correctamente.");
       }
       catch (Exception ex)

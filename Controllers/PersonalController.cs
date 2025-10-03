@@ -28,6 +28,7 @@ namespace SGMG.Controllers
     [Route("/personal/resumen")]
     public async Task<ActionResult<GenericResponse<ResumenPersonalResponse>>> GetResumenPersonal()
     {
+      _logger.LogInformation("Iniciando obtención de resumen de personal");
       return await _personalService.GetResumenPersonalAsync();
     }
 
