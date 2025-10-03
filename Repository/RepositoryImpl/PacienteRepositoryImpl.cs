@@ -27,6 +27,7 @@ namespace SGMG.Repository.RepositoryImpl
     public async Task<Paciente?> GetPacienteByIdAsync(int id)
     {
       return await _context.Pacientes.FindAsync(id);
+
     }
 
     // Agregar paciente
