@@ -9,7 +9,6 @@ namespace SGMG.Dtos.Request.HistoriaClinica
         
         public int IdPaciente { get; set; }
 
-        [Required(ErrorMessage = "El código de historia es obligatorio")]
         public string? CodigoHistoria { get; set; }
 
         public string? TipoSeguro { get; set; }

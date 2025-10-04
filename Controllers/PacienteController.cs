@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 
 namespace SGMG.Controllers
 {
-    [Route("[controller]")]
     public class PacienteController : Controller
     {
         private readonly ILogger<PacienteController> _logger;
@@ -18,11 +17,13 @@ namespace SGMG.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
         public IActionResult Index()
         {
             return View();
         }
 
+        [HttpGet]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

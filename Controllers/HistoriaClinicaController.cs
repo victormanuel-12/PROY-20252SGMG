@@ -59,7 +59,7 @@ namespace SGMG.Controllers
                 var historiaClinica = new HistoriaClinica
                 {
                     IdPaciente = paciente.IdPaciente,
-                    CodigoHistoria = GenerarCodigoHistoria(),
+                    CodigoHistoria = await GenerarCodigoHistoria(),
                     TipoSeguro = model.HistoriaClinica.TipoSeguro ?? string.Empty,
                     FechaNacimiento = model.HistoriaClinica.FechaNacimiento,
                     EstadoCivil = model.HistoriaClinica.EstadoCivil ?? string.Empty,
@@ -198,9 +198,9 @@ namespace SGMG.Controllers
                     var nuevaHistoria = new HistoriaClinica
                     {
                         IdPaciente = paciente.IdPaciente,
-                        CodigoHistoria = GenerarCodigoHistoria(),
+                        CodigoHistoria = await GenerarCodigoHistoria(),
                         TipoSeguro = model.HistoriaClinica.TipoSeguro ?? string.Empty,
-                        FechaNacimiento = model.HistoriaClinica.FechaNacimiento,
+                        FechaNacimiento = model.HistoriaClinica.FechaNacimiento.Date,
                         EstadoCivil = model.HistoriaClinica.EstadoCivil ?? string.Empty,
                         TipoSangre = model.HistoriaClinica.TipoSangre ?? string.Empty
                     };
@@ -250,9 +250,16 @@ namespace SGMG.Controllers
             }
         }
 
-        private string GenerarCodigoHistoria()
+        private async Task<string> GenerarCodigoHistoria()
         {
-            return $"HC-{DateTime.Now:yyyyMMddHHmmss}";
+            var historias = await _historiaClinicaRepository.GetAllHistoriasClinicasAsync();
+            var ultimoNumero = historias
+                .Where(h => h.CodigoHistoria.StartsWith("HC-2025-"))
+                .Select(h => int.TryParse(h.CodigoHistoria.Substring(8), out int num) ? num : 0)
+                .DefaultIfEmpty(0)
+                .Max();
+            
+            return $"HC-2025-{(ultimoNumero + 1):D4}";
         }
     }
 }
