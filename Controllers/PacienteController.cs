@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace SGMG.Controllers
-{   
+{
     [Route("[controller]")]
     public class PacienteController : Controller
     {
