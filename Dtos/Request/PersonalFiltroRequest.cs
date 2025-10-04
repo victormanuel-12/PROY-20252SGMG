@@ -9,7 +9,9 @@ namespace SGMG.Dtos.Request
   public class PersonalFiltroRequest
   {
     [StringLength(100, ErrorMessage = "El nombre no puede superar los 100 caracteres.")]
+    [RegularExpression(@"^(?!\d+$).+", ErrorMessage = "El nombre no puede ser solo números.")]
     public string? Nombre { get; set; }
+
     [RegularExpression(@"^\d{8}$", ErrorMessage = "El DNI debe tener exactamente 8 dígitos.")]
     public string? Dni { get; set; }
 
