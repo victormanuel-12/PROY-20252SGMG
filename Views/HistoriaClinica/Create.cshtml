@@ -1,0 +1,277 @@
+@model SGMG.Dtos.Request.HistoriaClinica.HistoriaClinicaCompletaRequestDTO
+
+@{
+    ViewData["Title"] = Model.EsEdicion ? "Actualizar Registro Paciente" : "Crear Registro Paciente";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            padding: 15px 20px;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0 !important;
+        }
+        .card-header:hover {
+            opacity: 0.95;
+        }
+        .section-title {
+            background-color: #e9ecef;
+            padding: 10px 15px;
+            font-weight: 600;
+            color: #495057;
+            margin: 20px -20px 20px -20px;
+            border-left: 4px solid #667eea;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        .form-control, .form-select {
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: transform 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 6px;
+        }
+        .text-danger {
+            font-size: 0.875rem;
+            margin-top: 5px;
+        }
+        .collapse-icon {
+            float: right;
+            transition: transform 0.3s;
+        }
+        .collapsed .collapse-icon {
+            transform: rotate(-90deg);
+        }
+        .main-title {
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .required-field::after {
+            content: " *";
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <h2 class="main-title">@ViewData["Title"]</h2>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                <strong>Por favor corrija los siguientes errores:</strong>
+                <ul>
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <form asp-action="@(Model.EsEdicion ? "Edit" : "Create")" method="post">
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.Paciente.IdPaciente)
+            @Html.HiddenFor(m => m.HistoriaClinica.IdHistoria)
+            @Html.HiddenFor(m => m.HistoriaClinica.IdPaciente)
+            @Html.HiddenFor(m => m.HistoriaClinica.CodigoHistoria)
+            @Html.HiddenFor(m => m.Domicilio.IdDomicilio)
+            @Html.HiddenFor(m => m.Domicilio.IdPaciente)
+
+            <!-- Información Personal -->
+            <div class="card">
+                <div class="card-header" data-bs-toggle="collapse" data-bs-target="#infoPersonal">
+                    <span>Información Personal</span>
+                    <span class="collapse-icon">▼</span>
+                </div>
+                <div id="infoPersonal" class="collapse show">
+                    <div class="card-body">
+                        <!-- Datos Personales -->
+                        <div class="section-title">Datos Personales</div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="Paciente.TipoDocumento" class="form-label required-field">Tipo de Documento</label>
+                                <select asp-for="Paciente.TipoDocumento" class="form-select">
+                                    <option value="">Seleccione...</option>
+                                    <option value="DNI">DNI</option>
+                                    <option value="CE">CE</option>
+                                    <option value="Pasaporte">Pasaporte</option>
+                                </select>
+                                <span asp-validation-for="Paciente.TipoDocumento" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Paciente.NumeroDocumento" class="form-label required-field">DNI / CEX</label>
+                                <input asp-for="Paciente.NumeroDocumento" class="form-control" placeholder="Ingrese número de documento" />
+                                <span asp-validation-for="Paciente.NumeroDocumento" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Paciente.Sexo" class="form-label required-field">Sexo</label>
+                                <select asp-for="Paciente.Sexo" class="form-select">
+                                    <option value="">Seleccione...</option>
+                                    <option value="M">Masculino</option>
+                                    <option value="F">Femenino</option>
+                                </select>
+                                <span asp-validation-for="Paciente.Sexo" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="Paciente.ApellidoPaterno" class="form-label required-field">Apellido Paterno</label>
+                                <input asp-for="Paciente.ApellidoPaterno" class="form-control" placeholder="Ingrese apellido paterno" />
+                                <span asp-validation-for="Paciente.ApellidoPaterno" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Paciente.Nombre" class="form-label required-field">Nombres</label>
+                                <input asp-for="Paciente.Nombre" class="form-control" placeholder="Ingrese nombres" />
+                                <span asp-validation-for="Paciente.Nombre" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Paciente.ApellidoMaterno" class="form-label required-field">Apellido Materno</label>
+                                <input asp-for="Paciente.ApellidoMaterno" class="form-control" placeholder="Ingrese apellido materno" />
+                                <span asp-validation-for="Paciente.ApellidoMaterno" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="HistoriaClinica.EstadoCivil" class="form-label required-field">Estado Civil</label>
+                                <input asp-for="HistoriaClinica.EstadoCivil" class="form-control" placeholder="Ej: Soltero, Casado..." />
+                                <span asp-validation-for="HistoriaClinica.EstadoCivil" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="HistoriaClinica.FechaNacimiento" class="form-label required-field">Fecha de Nacimiento</label>
+                                <input asp-for="HistoriaClinica.FechaNacimiento" type="date" class="form-control" />
+                                <span asp-validation-for="HistoriaClinica.FechaNacimiento" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="HistoriaClinica.TipoSeguro" class="form-label">Tipo de Seguro</label>
+                                <input asp-for="HistoriaClinica.TipoSeguro" class="form-control" placeholder="Ej: SIS, EsSalud..." />
+                                <span asp-validation-for="HistoriaClinica.TipoSeguro" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="HistoriaClinica.TipoSangre" class="form-label required-field">Tipo de Sangre</label>
+                                <input asp-for="HistoriaClinica.TipoSangre" class="form-control" placeholder="Ej: O+, A-, B+..." />
+                                <span asp-validation-for="HistoriaClinica.TipoSangre" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Información de Domicilio -->
+                        <div class="section-title">Información de Domicilio</div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="Domicilio.Departamento" class="form-label">Departamento</label>
+                                <input asp-for="Domicilio.Departamento" class="form-control" placeholder="Ingrese departamento" />
+                                <span asp-validation-for="Domicilio.Departamento" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Domicilio.Provincia" class="form-label">Provincia</label>
+                                <input asp-for="Domicilio.Provincia" class="form-control" placeholder="Ingrese provincia" />
+                                <span asp-validation-for="Domicilio.Provincia" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Domicilio.Distrito" class="form-label">Distrito</label>
+                                <input asp-for="Domicilio.Distrito" class="form-control" placeholder="Ingrese distrito" />
+                                <span asp-validation-for="Domicilio.Distrito" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label asp-for="Domicilio.Direccion" class="form-label">Dirección</label>
+                                <input asp-for="Domicilio.Direccion" class="form-control" placeholder="Ingrese dirección completa" />
+                                <span asp-validation-for="Domicilio.Direccion" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Domicilio.Referencia" class="form-label">Referencia</label>
+                                <input asp-for="Domicilio.Referencia" class="form-control" placeholder="Referencia de ubicación" />
+                                <span asp-validation-for="Domicilio.Referencia" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary me-2">
+                    <span>@(Model.EsEdicion ? "Actualizar Registro" : "Registrar Paciente")</span>
+                </button>
+                <a asp-controller="Paciente" asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Validación del lado del cliente -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation-unobtrusive@3.2.12/dist/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>
