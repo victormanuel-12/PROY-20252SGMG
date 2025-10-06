@@ -22,6 +22,11 @@ public class HomeController : Controller
     return View();
   }
 
+  public IActionResult Paciente()
+  {
+    return View();
+  }
+
   public IActionResult Privacy()
   {
     return View();

@@ -26,7 +26,7 @@ namespace SGMG.Controllers
         }
 
         // NUEVO: Endpoint de búsqueda
-      /*   [HttpGet]
+        [HttpGet]
         [Route("/pacientes/search")]
         public async Task<GenericResponse<Paciente>> SearchPaciente([FromQuery] string tipoDocumento, [FromQuery] string numeroDocumento)
         {
@@ -39,7 +39,7 @@ namespace SGMG.Controllers
         public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> GetCitasPendientesByPaciente(int id)
         {
             return await _pacienteService.GetCitasPendientesByPacienteAsync(id);
-        } */
+        }
 
         [HttpGet]
         [Route("/pacientes/{id}")]

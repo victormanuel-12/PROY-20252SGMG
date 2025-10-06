@@ -10,6 +10,8 @@ namespace SGMG.Repository
   public interface IPacienteRepository
   {
     Task<IEnumerable<Paciente>> GetAllPacientesAsync();
+    Task<Paciente?> GetPacienteByDocumentoAsync(string tipoDocumento, string numeroDocumento);
+    Task<IEnumerable<Cita>> GetCitasPendientesByPacienteAsync(int idPaciente);
     Task<Paciente?> GetPacienteByIdAsync(int id);
     Task AddPacienteAsync(Paciente paciente);
     Task UpdatePacienteAsync(Paciente paciente);
