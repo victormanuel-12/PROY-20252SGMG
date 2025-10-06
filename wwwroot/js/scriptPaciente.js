@@ -207,10 +207,10 @@ function showAlert(message, type = "success") {
 
 // Acciones (puedes implementar según tu lógica)
 function viewPaciente(id) {
-    showAlert("Funcionalidad de ver paciente aún no implementada.", "info");
+    showAlert("Funcionalidad de editar paciente aún no implementada.", "info");
 }
 function editPaciente(id) {
-    showAlert("Funcionalidad de editar paciente aún no implementada.", "info");
+    showAlert("Funcionalidad para solicitar cita aún no implementada.", "info");
 }
 
 // Cargar citas pendientes de un paciente
