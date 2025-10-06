@@ -51,6 +51,8 @@ builder.Services.AddScoped<IMedicoRepository, MedicoRepositoryImpl>();
 builder.Services.AddScoped<IEnfermeriaRepository, EnfermeriaRepositoryImpl>();
 builder.Services.AddScoped<IPersonalRepository, PersonalRepositoryImpl>();
 builder.Services.AddScoped<IPersonalTRepository, PersonalTRepositoryImpl>();
+builder.Services.AddScoped<IHistoriaClinicaRepository, HistoriaClinicaRepository>();
+builder.Services.AddScoped<IDomicilioPacienteRepository, DomicilioPacienteRepository>();
 
 // Registro de servicios (Inyección de dependencias)
 builder.Services.AddScoped<IPacienteService, PacienteService>();
