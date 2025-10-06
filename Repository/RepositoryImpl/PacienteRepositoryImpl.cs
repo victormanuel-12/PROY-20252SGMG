@@ -23,11 +23,22 @@ namespace SGMG.Repository.RepositoryImpl
       return await _context.Pacientes.ToListAsync();
     }
 
+    // NUEVO: Obtener paciente por tipo y número de documento
+    public async Task<Paciente?> GetPacienteByDocumentoAsync(string tipoDocumento, string numeroDocumento)
+    {
+      return await _context.Pacientes.FirstOrDefaultAsync(p => p.TipoDocumento == tipoDocumento && p.NumeroDocumento == numeroDocumento);
+    }
+
+    // NUEVO: Obtener citas pendientes de un paciente
+    public async Task<IEnumerable<Cita>> GetCitasPendientesByPacienteAsync(int idPaciente)
+    {
+      return await _context.Citas.Include(c => c.Paciente).Include(c => c.Medico).Where(c => c.IdPaciente == idPaciente && (c.EstadoCita == "Pendiente" || c.EstadoCita == "Confirmada")).OrderByDescending(c => c.FechaRegistro).ToListAsync();
+    }
+
     // Obtener paciente por Id
     public async Task<Paciente?> GetPacienteByIdAsync(int id)
     {
       return await _context.Pacientes.FindAsync(id);
-
     }
 
     // Agregar paciente
