@@ -73,8 +73,22 @@ document.addEventListener("DOMContentLoaded", function () {
   initializeSidebar();
 });
 
-// Alert Functions
+// Alert Functions - MANTENER COMPATIBILIDAD
 function showAlert(message, type = "success") {
+  if (window.alertManager) {
+    if (type === "success") {
+      window.alertManager.success(message);
+    } else if (type === "error") {
+      window.alertManager.error(message);
+    } else if (type === "warning") {
+      window.alertManager.warning(message);
+    } else {
+      window.alertManager.info(message);
+    }
+    return;
+  }
+
+  // Fallback si alertManager no está disponible
   const alertContainer = document.getElementById("alertContainer");
   if (!alertContainer) return;
 

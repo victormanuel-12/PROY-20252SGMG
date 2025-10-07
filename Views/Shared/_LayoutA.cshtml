@@ -1,3 +1,4 @@
+@using Microsoft.CodeAnalysis.Scripting
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,7 +7,6 @@
     <title>@ViewData["Title"] - SIGMEG</title>
       <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
       <link rel="stylesheet" href="~/css/stylesPersonal.css" asp-append-version="true" />
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @RenderSection("Styles", required: false)
 </head>
 <body>
@@ -81,6 +81,9 @@
     </main>
 
     <script src="~/js/site.js" asp-append-version="true"></script>
+  
+    <script src="~/js/global-error-handler.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>

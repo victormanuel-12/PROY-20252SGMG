@@ -13,7 +13,10 @@
   animation: personalModalFadeIn 0.3s;
   overflow-y: auto;
 }
-
+.required {
+  color: var(--danger-color, #e74c3c);
+  margin-left: 2px;
+}
 @keyframes personalModalFadeIn {
   from {
     opacity: 0;
