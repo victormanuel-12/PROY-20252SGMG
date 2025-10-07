@@ -1,3 +1,4 @@
+@using Microsoft.CodeAnalysis.Scripting
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -80,6 +81,9 @@
     </main>
 
     <script src="~/js/site.js" asp-append-version="true"></script>
+  
+    <script src="~/js/global-error-handler.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>
