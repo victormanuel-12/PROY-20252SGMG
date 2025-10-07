@@ -26,6 +26,10 @@ public class HomeController : Controller
   {
     return View();
   }
+  public IActionResult VisualCitas()
+  {
+    return View();
+  }
 
   public IActionResult Privacy()
   {

@@ -108,6 +108,34 @@ namespace SGMG.Services.ServiceImpl
       }
     }
 
+    public async Task<GenericResponse<IEnumerable<Medico>>> GetMedicosFilteredAsync(string? numeroDni, string? idConsultorio, string? estado, string? fechaInicio, string? fechaFin, string? turno)
+    {
+      try
+      {
+        // Parsear idConsultorio
+        int? idConsult = null;
+        if (!string.IsNullOrWhiteSpace(idConsultorio) && int.TryParse(idConsultorio, out var idc))
+          idConsult = idc;
+
+        // Parsear fechas (aceptamos YYYY-MM-DD o con hora)
+        DateTime? from = null;
+        DateTime? to = null;
+        if (!string.IsNullOrWhiteSpace(fechaInicio) && DateTime.TryParse(fechaInicio, out var f))
+          from = f.Date;
+        if (!string.IsNullOrWhiteSpace(fechaFin) && DateTime.TryParse(fechaFin, out var t))
+          to = t.Date;
+
+        var medicos = await _medicoRepository.GetMedicosFilteredAsync(numeroDni, idConsult, estado, from, to, turno);
+        if (medicos == null || !medicos.Any())
+          return new GenericResponse<IEnumerable<Medico>> { Success = false, Message = "No se encontraron médicos con los filtros proporcionados.", Data = null };
+        return new GenericResponse<IEnumerable<Medico>> { Success = true, Message = "Médicos obtenidos correctamente.", Data = medicos };
+      }
+      catch (Exception ex)
+      {
+        throw new GenericException("Error al filtrar los médicos.", ex);
+      }
+    }
+
     private void MapToMedico(MedicoRequestDTO dto, Medico medico)
     {
       // Solo actualizamos los campos si el DTO trae valores válidos

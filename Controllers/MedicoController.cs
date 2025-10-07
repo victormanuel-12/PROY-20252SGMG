@@ -59,6 +59,13 @@ namespace SGMG.Controllers
       return await _medicoService.DeleteMedicoAsync(id);
     }
 
+    [HttpGet]
+    [Route("/medicos/filters")]
+    public async Task<GenericResponse<IEnumerable<Medico>>> GetMedicosFiltered([FromQuery] string? numeroDni, [FromQuery] string? idConsultorio, [FromQuery] string? estado, [FromQuery] string? fechaInicio, [FromQuery] string? fechaFin, [FromQuery] string? turno)
+    {
+      return await _medicoService.GetMedicosFilteredAsync(numeroDni, idConsultorio, estado, fechaInicio, fechaFin, turno);
+    }
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {

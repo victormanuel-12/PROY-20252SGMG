@@ -13,6 +13,13 @@ namespace SGMG.common.exception
   {
     public void OnActionExecuting(ActionExecutingContext context)
     {
+      // No validar en peticiones de solo lectura (GET, HEAD) para evitar errores de binding en query params
+      var method = context.HttpContext.Request.Method;
+      if (string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase) || string.Equals(method, "HEAD", StringComparison.OrdinalIgnoreCase))
+      {
+        return;
+      }
+
       if (!context.ModelState.IsValid)
       {
         var errors = new List<object>();
