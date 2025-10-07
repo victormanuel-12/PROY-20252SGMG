@@ -1,3 +1,4 @@
+/* Estilos para la tabla de pacientes */
 .badge {
     padding: 4px 8px;
     border-radius: 4px;
@@ -28,4 +29,65 @@
 .badge-secondary {
     background-color: #6c757d;
     color: white;
+}
+
+/* Estilos para el formulario de filtros */
+
+.btn i {
+    margin-right: 6px;
+}
+
+.filters-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Contenedor de botones de acción */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Estilos de botones de acción */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.action-btn.view {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.action-btn.view:hover {
+    background-color: #138496;
+}
+
+.action-btn.edit {
+    background-color: #007bff;
+    color: white;
+}
+
+.action-btn.edit:hover {
+    background-color: #0056b3;
+}
+
+.action-btn i {
+    margin: 0;
 }
