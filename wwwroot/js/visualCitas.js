@@ -5,7 +5,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const limpiarBtn = document.getElementById('limpiarFiltrosBtn');
   if (buscarBtn) buscarBtn.addEventListener('click', onBuscarMedicos);
   if (limpiarBtn) limpiarBtn.addEventListener('click', onLimpiarFiltros);
+  // Load consultorios into select
+  loadConsultorios();
 });
+
+async function loadConsultorios() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/personal/resumen`);
+    const result = await res.json();
+    if (!result.success || !result.data) return;
+    const consultorios = result.data.consultoriosList || [];
+    const select = document.getElementById('fConsultorio');
+    if (!select) return;
+    // Clear existing (except first placeholder option)
+    select.innerHTML = '<option value="">Todos los consultorios</option>';
+    consultorios.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.idConsultorio || c.IdConsultorio || c.Id || '';
+      opt.textContent = c.nombre || c.Nombre || '';
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error('Error cargando consultorios', err);
+  }
+}
 
 async function onBuscarMedicos(e) {
   e && e.preventDefault && e.preventDefault();

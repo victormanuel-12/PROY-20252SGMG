@@ -26,7 +26,9 @@ namespace SGMG.Repository.RepositoryImpl
 
     public async Task<IEnumerable<Medico>> GetMedicosFilteredAsync(string? numeroDni, int? idConsultorio, string? estado, DateTime? fechaInicio, DateTime? fechaFin, string? turno)
     {
-      var query = _context.Medicos.AsQueryable();
+      var query = _context.Medicos
+        .Include(m => m.ConsultorioAsignado)
+        .AsQueryable();
 
       if (!string.IsNullOrWhiteSpace(numeroDni))
         query = query.Where(m => m.NumeroDni.Contains(numeroDni));
