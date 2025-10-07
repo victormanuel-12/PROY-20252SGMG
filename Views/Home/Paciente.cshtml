@@ -43,13 +43,16 @@
         </form>
     </div>
 
- <!-- Add Button (Opcional, si quieres registrar pacientes desde aquí) -->
+ <!-- Add Button (registrar pacientes) -->
 <div class="add-section" id="addHistoriaSection" style="display:none;">
-    <span class="text-info" id="pacienteNoRegistradoMsg" style="margin-left:10px;">Paciente aún no se ha registrado</span>
-    <button class="btn btn-success" id="addPacienteBtn">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Crear Historia
-    </button>  
+     <span class="text-muted" id="pacienteNoRegistradoMsg" style="margin-left:15px; font-style: italic;">
+        <i class="fas fa-info-circle"></i>
+        Este paciente aún no tiene historia clínica
+    </span>
+    <button class="btn btn-primary" id="addPacienteBtn">
+        <i class="fas fa-file-medical"></i>
+        Crear Historia Clínica
+    </button>
 </div>
 
     <!-- Table Section -->
