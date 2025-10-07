@@ -144,8 +144,14 @@ function renderPacienteTable(data) {
             <td>${(p.Edad !== undefined ? p.Edad : p.edad !== undefined ? p.edad : "-") + " años"}</td>
             <td>${(p.Sexo === "M" || p.sexo === "M") ? "Masculino" : (p.Sexo === "F" || p.sexo === "F") ? "Femenino" : ""}</td>
             <td>
-                <button class="action-btn view" title="Ver" onclick="viewPaciente(${p.IdPaciente || p.idPaciente})"><i class="fas fa-eye"></i></button>
-                <button class="action-btn edit" title="Editar" onclick="editPaciente(${p.IdPaciente || p.idPaciente})"><i class="fas fa-edit"></i></button>
+                <div class="action-buttons">
+                <button class="action-btn view" title="Ver" onclick="viewPaciente(${p.IdPaciente || p.idPaciente})">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="action-btn edit" title="Editar" onclick="editPaciente(${p.IdPaciente || p.idPaciente})">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </div>
             </td>
         </tr>
     `).join("");
@@ -205,11 +211,12 @@ function showAlert(message, type = "success") {
     setTimeout(() => alert.remove(), 4000);
 }
 
-// Acciones (puedes implementar según tu lógica)
-function viewPaciente(id) {
-    showAlert("Funcionalidad de editar paciente aún no implementada.", "info");
+// Acciones
+// Función para editar Historia Clínica
+function editarHistoriaClinica(id) {
+    showAlert("Funcionalidad de editar Historia Clinica del paciente aún no implementada.", "info");
 }
-function editPaciente(id) {
+function solicitarCita(id) {
     showAlert("Funcionalidad para solicitar cita aún no implementada.", "info");
 }
 
