@@ -13,26 +13,6 @@ namespace SGMG.common.exception
   {
     public void OnActionExecuting(ActionExecutingContext context)
     {
-      // Si la acción o el controlador tiene NoValidationAttribute, saltar la validación global.
-      // Usar ControllerActionDescriptor para una detección más fiable en MVC.
-      try
-      {
-        var controllerAction = context.ActionDescriptor as Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor;
-        if (controllerAction != null)
-        {
-          var methodHas = controllerAction.MethodInfo.GetCustomAttributes(typeof(NoValidationAttribute), true).Length > 0;
-          var controllerHas = controllerAction.ControllerTypeInfo.GetCustomAttributes(typeof(NoValidationAttribute), true).Length > 0;
-          if (methodHas || controllerHas)
-          {
-            return;
-          }
-        }
-      }
-      catch
-      {
-        // En caso de que no sea un ControllerActionDescriptor o falle la reflexión, seguir con la validación por defecto
-      }
-
       if (!context.ModelState.IsValid)
       {
         var errors = new List<object>();

@@ -1,0 +1,75 @@
+@{
+    ViewData["Title"] = "Visualizar disponibilidad de citas";
+    Layout = "~/Views/Shared/_LayoutA.cshtml";
+}
+
+<div class="page-container">
+  <div class="filters-section">
+    <h3 class="section-title">Disponibilidad de citas</h3>
+    <form id="visualCitasForm" onsubmit="return false;">
+      <div class="filters-grid">
+        <div class="form-group">
+          <label>Número de DNI</label>
+          <input type="text" id="fNumeroDni" class="form-control" placeholder="Numero de DNI" />
+        </div>
+        <div class="form-group">
+          <label>Consultorio</label>
+          <select id="fConsultorio" class="form-control">
+            <option value="">Todos los consultorios</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="fEstado" class="form-control">
+            <option value="">Todos</option>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fecha Inicio</label>
+          <input type="date" id="fFechaInicio" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Fecha Fin</label>
+          <input type="date" id="fFechaFin" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Turno</label>
+          <select id="fTurno" class="form-control">
+            <option value="">Todos los turnos</option>
+            <option value="Mañana">Mañana</option>
+            <option value="Tarde">Tarde</option>
+          </select>
+        </div>
+      </div>
+      <div class="filters-actions" style="margin-top:10px;">
+        <button id="buscarMedicosBtn" class="btn btn-primary">Buscar</button>
+        <button id="limpiarFiltrosBtn" class="btn btn-secondary" type="button">Limpiar Filtros</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-section" style="margin-top:20px;">
+    <h3 class="section-title">Resultados</h3>
+    <div class="table-responsive">
+      <table class="data-table" id="medicosTable">
+        <thead>
+          <tr>
+            <th>DOCUMENTO</th>
+            <th>MÉDICO</th>
+            <th>CONSULTORIO</th>
+            <th>ACCIÓN</th>
+          </tr>
+        </thead>
+        <tbody id="medicosTableBody">
+          <tr><td colspan="4" class="no-data">Use los filtros y haga clic en Buscar.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/visualCitas.js" asp-append-version="true"></script>
+}
