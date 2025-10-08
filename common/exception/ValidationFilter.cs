@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using SGMG.Dtos.Response;
 
@@ -13,6 +14,18 @@ namespace SGMG.common.exception
   {
     public void OnActionExecuting(ActionExecutingContext context)
     {
+      // Si la acción o el controlador tiene el atributo [NoValidation], no ejecutar este filtro
+      var cad = context.ActionDescriptor as ControllerActionDescriptor;
+      if (cad != null)
+      {
+        var hasNoValidationOnMethod = cad.MethodInfo.GetCustomAttributes(typeof(NoValidationAttribute), true).Any();
+        var hasNoValidationOnController = cad.ControllerTypeInfo.GetCustomAttributes(typeof(NoValidationAttribute), true).Any();
+        if (hasNoValidationOnMethod || hasNoValidationOnController)
+        {
+          return;
+        }
+      }
+
       if (!context.ModelState.IsValid)
       {
         var errors = new List<object>();
