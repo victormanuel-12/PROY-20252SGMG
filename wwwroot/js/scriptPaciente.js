@@ -282,24 +282,19 @@ function renderCitasPendientesTable(citas) {
     return;
   }
 
-  tbody.innerHTML = citas
-    .map((c) => {
-      // Con el DTO ya vienen los datos formateados
-      const fechaFormateada = c.fechaCita
-        ? new Date(c.fechaCita).toLocaleDateString("es-PE")
-        : "-";
-      const horaFormateada = c.horaCita || "-";
-
-      return `
+    tbody.innerHTML = citas.map(c => {
+        // Con el DTO ya vienen los datos formateados
+        const fechaFormateada = c.fechaCita ? new Date(c.fechaCita).toLocaleDateString('es-PE') : "-";
+        const horaFormateada = c.horaCita || "-";
+        
+        return `
             <tr>
                 <td>${c.tipoDocumento || ""}</td>
                 <td>${c.numeroDocumento || ""}</td>
                 <td>${c.nombreCompletoPaciente || ""}</td>
                 <td>${fechaFormateada}</td>
                 <td>${horaFormateada}</td>
-                <td><span class="badge badge-${getBadgeClass(c.estadoCita)}">${
-        c.estadoCita || ""
-      }</span></td>
+                <td><span class="badge badge-${getBadgeClass(c.estadoCita)}">${c.estadoCita || ""}</span></td>
                 <td>${c.nombreCompletoMedico || ""}</td>
             </tr>
         `;
@@ -309,16 +304,16 @@ function renderCitasPendientesTable(citas) {
 
 // Obtener clase CSS para el badge según el estado
 function getBadgeClass(estado) {
-  switch (estado) {
-    case "Confirmada":
-      return "success";
-    case "Pendiente":
-      return "warning";
-    case "Cancelada":
-      return "danger";
-    case "En Curso":
-      return "info";
-    default:
-      return "secondary";
-  }
+    switch(estado) {
+        case "Confirmada":
+            return "success";
+        case "Pendiente":
+            return "warning";
+        case "Cancelada":
+            return "danger";
+        case "En Curso":
+            return "info";
+        default:
+            return "secondary";
+    }
 }
