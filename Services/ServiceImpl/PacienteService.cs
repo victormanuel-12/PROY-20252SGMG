@@ -37,6 +37,62 @@ namespace SGMG.Services.ServiceImpl
       }
     }
 
+    public async Task<GenericResponse<Paciente>> SearchPacienteByDocumentoAsync(string tipoDocumento, string numeroDocumento)
+    {
+      try
+      {
+        if (string.IsNullOrWhiteSpace(tipoDocumento) || string.IsNullOrWhiteSpace(numeroDocumento))
+          return new GenericResponse<Paciente>(false, "Debe proporcionar tipo y número de documento.");
+
+        var paciente = await _pacienteRepository.GetPacienteByDocumentoAsync(tipoDocumento, numeroDocumento);
+
+        if (paciente == null)
+          return new GenericResponse<Paciente>(false, "No se encontró ningún paciente con ese documento.");
+
+        return new GenericResponse<Paciente>(true, paciente, "Paciente encontrado correctamente.");
+      }
+      catch (Exception ex)
+      {
+        throw new GenericException("Error al buscar paciente por documento.", ex);
+      }
+    }
+
+    public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> GetCitasPendientesByPacienteAsync(int idPaciente)
+    {
+      try
+      {
+        if (idPaciente <= 0)
+            return new GenericResponse<IEnumerable<CitaResponseDTO>>(false, "El ID del paciente no es válido.");
+
+        var citas = await _pacienteRepository.GetCitasPendientesByPacienteAsync(idPaciente);
+        
+        if (citas == null || !citas.Any())
+            return new GenericResponse<IEnumerable<CitaResponseDTO>>(false, "No hay citas pendientes para este paciente.");
+
+        // Mapear a DTO para evitar ciclos de referencia
+        var citasDTO = citas.Select(c => new CitaResponseDTO
+        {
+            IdCita = c.IdCita,
+            IdPaciente = c.IdPaciente,
+            IdMedico = c.IdMedico,
+            Especialidad = c.Especialidad,
+            FechaCita = c.FechaCita,
+            HoraCita = c.HoraCita,
+            Consultorio = c.Consultorio,
+            EstadoCita = c.EstadoCita,
+            TipoDocumento = c.Paciente?.TipoDocumento ?? "",
+            NumeroDocumento = c.Paciente?.NumeroDocumento ?? "",
+            NombreCompletoPaciente = $"{c.Paciente?.ApellidoPaterno ?? ""} {c.Paciente?.ApellidoMaterno ?? ""}, {c.Paciente?.Nombre ?? ""}",
+            NombreCompletoMedico = $"{c.Medico?.Nombre ?? ""} {c.Medico?.ApellidoPaterno ?? ""}"
+        }).ToList();
+
+        return new GenericResponse<IEnumerable<CitaResponseDTO>>(true, citasDTO, "Citas pendientes obtenidas correctamente.");
+      }
+      catch (Exception ex)
+      {
+        throw new GenericException($"Error al obtener citas pendientes del paciente con ID: {idPaciente}", ex);
+      }
+    }
     public async Task<GenericResponse<Paciente>> GetPacienteByIdAsync(int id)
     {
       try

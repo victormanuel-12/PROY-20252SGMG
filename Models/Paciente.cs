@@ -17,6 +17,7 @@ namespace SGMG.Models
     public string ApellidoPaterno { get; set; } = "";
     public string ApellidoMaterno { get; set; } = "";
     public string Sexo { get; set; } = "";
+    public int Edad { get; set; }
     public DateTime FechaRegistro { get; set; }
 
     // Relaciones

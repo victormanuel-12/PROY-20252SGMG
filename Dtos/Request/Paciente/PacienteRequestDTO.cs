@@ -37,5 +37,8 @@ namespace SGMG.Dtos.Request.Paciente
     [RegularExpression("^(M|F)$", ErrorMessage = "El sexo debe ser M (Masculino) o F (Femenino)")]
     public string? Sexo { get; set; }
 
+    [Required(ErrorMessage = "La edad es obligatoria")]
+    [Range(0, 200, ErrorMessage = "La edad debe ser un numero entero")]
+    public int Edad { get; set; }
   }
 }

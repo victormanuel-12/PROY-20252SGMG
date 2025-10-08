@@ -24,6 +24,35 @@ namespace SGMG.Repository.RepositoryImpl
       return await _context.Medicos.ToListAsync();
     }
 
+    public async Task<IEnumerable<Medico>> GetMedicosFilteredAsync(string? numeroDni, int? idConsultorio, string? estado, DateTime? fechaInicio, DateTime? fechaFin, string? turno)
+    {
+      var query = _context.Medicos
+        .Include(m => m.ConsultorioAsignado)
+        .AsQueryable();
+
+      if (!string.IsNullOrWhiteSpace(numeroDni))
+        query = query.Where(m => m.NumeroDni.Contains(numeroDni));
+
+      if (idConsultorio.HasValue && idConsultorio.Value > 0)
+        query = query.Where(m => m.IdConsultorio == idConsultorio.Value);
+
+      if (!string.IsNullOrWhiteSpace(estado))
+        query = query.Where(m => m.EstadoLaboral == estado);
+
+      if (!string.IsNullOrWhiteSpace(turno))
+        query = query.Where(m => m.Turno == turno);
+
+      // Si se quisiera filtrar por disponibilidad entre fechas, se puede hacer join con Disponibilidades
+      if (fechaInicio.HasValue || fechaFin.HasValue)
+      {
+        var from = fechaInicio ?? DateTime.MinValue;
+        var to = fechaFin ?? DateTime.MaxValue;
+        query = query.Where(m => m.Disponibilidades.Any(d => d.Fecha >= from && d.Fecha <= to));
+      }
+
+      return await query.ToListAsync();
+    }
+
     public async Task<Medico?> GetMedicoByIdAsync(int id)
     {
       return await _context.Medicos.FindAsync(id);

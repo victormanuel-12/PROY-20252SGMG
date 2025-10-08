@@ -1,0 +1,112 @@
+@{
+    ViewData["Title"] = "Buscar Pacientes";
+    Layout = "~/Views/Shared/_LayoutA.cshtml";
+}
+
+<div class="page-container">
+    <!-- Alert Messages -->
+    <div id="alertContainer"></div>
+
+   
+
+    <!-- Search Filters -->
+    <div class="filters-section">
+        <h3 class="section-title">Buscar Pacientes</h3>
+        <form id="searchPacienteForm">
+            <div class="filters-grid">
+                <div class="form-group">
+                    <label for="tipoBusqueda">Tipo búsqueda <span title="Seleccione el tipo de documento">(?)</span>:</label>
+                    <select id="tipoBusqueda" name="TipoDocumento" class="form-control">
+                        <option value="">Seleccione</option>
+                        <option value="DNI">DNI</option>
+                        <option value="CE">CE</option>
+                        <option value="Pasaporte">Pasaporte</option>
+                    </select>
+                    <span class="error-message" id="error-TipoDocumento"></span>
+                </div>
+                <div class="form-group">
+                    <label for="numeroDocumento">Número documento:</label>
+                    <input type="text" id="numeroDocumento" name="NumeroDocumento" class="form-control" placeholder="********">
+                    <span class="error-message" id="error-NumeroDocumento"></span>
+                </div>
+            </div>
+            <div class="filters-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                    Buscar
+                </button>
+                <button type="button" class="btn btn-secondary" id="clearPacienteBtn">
+                    <i class="fas fa-eraser"></i>
+                    Limpiar
+                </button>
+            </div>
+        </form>
+    </div>
+
+ <!-- Add Button (registrar pacientes) -->
+<div class="add-section" id="addHistoriaSection" style="display:none;">
+     <span class="text-muted" id="pacienteNoRegistradoMsg" style="margin-left:15px; font-style: italic;">
+        <i class="fas fa-info-circle"></i>
+        Este paciente aún no tiene historia clínica
+    </span>
+    <a class="btn btn-primary" href="@Url.Action("Create", "HistoriaClinica")">
+    <i class="fas fa-file-medical"></i>
+    Crear Historia Clínica
+</a>
+
+</div>
+
+    <!-- Table Section -->
+    <div class="table-section">
+        <h3 class="section-title">Pacientes Encontrados</h3>
+        <div class="table-responsive">
+            <table class="data-table" id="pacienteTable">
+                <thead>
+                    <tr>
+                        <th>TIPO DOCUMENTO</th>
+                        <th>NÚMERO DOCUMENTO</th>
+                        <th>APELLIDOS Y NOMBRES</th>
+                        <th>EDAD ACTUAL</th>
+                        <th>GÉNERO</th>
+                        <th>ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody id="pacienteTableBody">
+                    <tr>
+                        <td colspan="6" class="no-data">No hay datos disponibles. Use los filtros para buscar pacientes.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+
+    <!-- Citas Pendientes Section -->
+    <div class="table-section" style="margin-top:30px;">
+        <h3 class="section-title">Citas Pendientes</h3>
+        <div class="table-responsive">
+            <table class="data-table" id="citasPendientesTable">
+                <thead>
+                    <tr>
+                        <th>TIPO DOCUMENTO</th>
+                        <th>NÚMERO DOCUMENTO</th>
+                        <th>APELLIDOS Y NOMBRES</th>
+                        <th>FECHA ATENCIÓN</th>
+                        <th>HORA</th>
+                        <th>ESTADO</th>
+                        <th>MÉDICO</th>
+                    </tr>
+                </thead>
+                <tbody id="citasPendientesBody">
+                    <tr>
+                        <td colspan="7" class="no-data">No hay citas pendientes.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/scriptPaciente.js" asp-append-version="true"></script>
+}
