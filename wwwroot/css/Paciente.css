@@ -1,35 +1,44 @@
-/* Estilos para la tabla de pacientes */
-.badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.85em;
-    font-weight: 500;
+/* Estilos para estados tipo pill */
+.estado-pill {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 90px;
 }
 
-.badge-success {
-    background-color: #28a745;
-    color: white;
+/* Activo/Confirmada - Verde agua */
+.estado-activo {
+    background-color: #d4f4dd;
+    color: #2e7d32;
 }
 
-.badge-warning {
-    background-color: #ffc107;
-    color: #212529;
+/* Inactivo/Cancelada - Rojo coral */
+.estado-inactivo {
+    background-color: #ffe5e5;
+    color: #c62828;
 }
 
-.badge-danger {
-    background-color: #dc3545;
-    color: white;
+/* Pendiente - Amarillo pastel */
+.estado-pendiente {
+    background-color: #fff9c4;
+    color: #f57f17;
 }
 
-.badge-info {
-    background-color: #17a2b8;
-    color: white;
+/* En Curso - Azul cielo */
+.estado-en-curso {
+    background-color: #e1f5fe;
+    color: #0277bd;
 }
 
-.badge-secondary {
-    background-color: #6c757d;
-    color: white;
+/* Default */
+.estado-default {
+    background-color: #eeeeee;
+    color: #757575;
 }
+
 
 /* Estilos para el formulario de filtros */
 

@@ -272,20 +272,22 @@ async function loadCitasPendientes(idPaciente) {
   }
 }
 
+
 // Renderizar tabla de citas pendientes
 function renderCitasPendientesTable(citas) {
-  const tbody = document.getElementById("citasPendientesBody");
-  if (!tbody) return;
+    const tbody = document.getElementById("citasPendientesBody");
+    if (!tbody) return;
 
-  if (!citas || citas.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="no-data">No hay citas pendientes.</td></tr>`;
-    return;
-  }
+    if (!citas || citas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="no-data">No hay citas pendientes.</td></tr>`;
+        return;
+    }
 
     tbody.innerHTML = citas.map(c => {
-        // Con el DTO ya vienen los datos formateados
         const fechaFormateada = c.fechaCita ? new Date(c.fechaCita).toLocaleDateString('es-PE') : "-";
         const horaFormateada = c.horaCita || "-";
+        const estado = c.estadoCita || "Sin Estado";
+        const estadoClass = getEstadoClass(estado);
         
         return `
             <tr>
@@ -294,26 +296,31 @@ function renderCitasPendientesTable(citas) {
                 <td>${c.nombreCompletoPaciente || ""}</td>
                 <td>${fechaFormateada}</td>
                 <td>${horaFormateada}</td>
-                <td><span class="badge badge-${getBadgeClass(c.estadoCita)}">${c.estadoCita || ""}</span></td>
+                <td><span class="estado-pill ${estadoClass}">${estado}</span></td>
                 <td>${c.nombreCompletoMedico || ""}</td>
             </tr>
         `;
-    })
-    .join("");
+    }).join("");
 }
 
-// Obtener clase CSS para el badge según el estado
-function getBadgeClass(estado) {
-    switch(estado) {
-        case "Confirmada":
-            return "success";
-        case "Pendiente":
-            return "warning";
-        case "Cancelada":
-            return "danger";
-        case "En Curso":
-            return "info";
+// Obtener clase CSS para el estado
+function getEstadoClass(estado) {
+    if (!estado) return "estado-default";
+    
+    const estadoNormalizado = estado.trim().toLowerCase();
+    
+    switch(estadoNormalizado) {
+        case "confirmada":
+        case "activo":
+            return "estado-activo";
+        case "pendiente":
+            return "estado-pendiente";
+        case "cancelada":
+        case "inactivo":
+            return "estado-inactivo";
+        case "en curso":
+            return "estado-en-curso";
         default:
-            return "secondary";
+            return "estado-default";
     }
 }
