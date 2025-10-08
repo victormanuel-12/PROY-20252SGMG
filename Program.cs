@@ -53,6 +53,7 @@ builder.Services.AddScoped<IPersonalRepository, PersonalRepositoryImpl>();
 builder.Services.AddScoped<IPersonalTRepository, PersonalTRepositoryImpl>();
 builder.Services.AddScoped<IHistoriaClinicaRepository, HistoriaClinicaRepository>();
 builder.Services.AddScoped<IDomicilioPacienteRepository, DomicilioPacienteRepository>();
+builder.Services.AddScoped<IPagoRepository, PagoRepository>();
 
 // Registro de servicios (Inyección de dependencias)
 builder.Services.AddScoped<IPacienteService, PacienteService>();
@@ -60,6 +61,7 @@ builder.Services.AddScoped<IMedicoService, MedicoServiceImpl>();
 builder.Services.AddScoped<IEnfermeriaService, EnfermeriaServiceImpl>();
 builder.Services.AddScoped<IPersonalService, PersonalServiceImpl>();
 builder.Services.AddScoped<IPersonalTservice, PersonalTServiceImpl>();
+builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddScoped<GlobalExceptionFilter>();
 builder.Services.AddScoped<ValidationFilter>();
 var app = builder.Build();
