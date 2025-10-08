@@ -14,16 +14,11 @@ namespace SGMG.common.exception
   {
     public void OnActionExecuting(ActionExecutingContext context)
     {
-      // Si la acción o el controlador tiene el atributo [NoValidation], no ejecutar este filtro
-      var cad = context.ActionDescriptor as ControllerActionDescriptor;
-      if (cad != null)
+      // No validar en peticiones de solo lectura (GET, HEAD) para evitar errores de binding en query params
+      var method = context.HttpContext.Request.Method;
+      if (string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase) || string.Equals(method, "HEAD", StringComparison.OrdinalIgnoreCase))
       {
-        var hasNoValidationOnMethod = cad.MethodInfo.GetCustomAttributes(typeof(NoValidationAttribute), true).Any();
-        var hasNoValidationOnController = cad.ControllerTypeInfo.GetCustomAttributes(typeof(NoValidationAttribute), true).Any();
-        if (hasNoValidationOnMethod || hasNoValidationOnController)
-        {
-          return;
-        }
+        return;
       }
 
       if (!context.ModelState.IsValid)
