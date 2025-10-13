@@ -139,51 +139,34 @@ function renderPacienteTable(data) {
 
   if (addHistoriaSection) addHistoriaSection.style.display = "none";
 
-  tbody.innerHTML = data
-    .map(
-      (p) => `
-        <tr>
-            <td>${p.TipoDocumento || p.tipoDocumento || ""}</td>
-            <td>${p.NumeroDocumento || p.numeroDocumento || ""}</td>
-            <td>${
-              (p.ApellidoPaterno || p.apellidoPaterno || "") +
-              " " +
-              (p.ApellidoMaterno || p.apellidoMaterno || "") +
-              ", " +
-              (p.Nombre || p.nombre || "")
-            }</td>
-            <td>${
-              (p.Edad !== undefined
-                ? p.Edad
-                : p.edad !== undefined
-                ? p.edad
-                : "-") + " años"
-            }</td>
-            <td>${
-              p.Sexo === "M" || p.sexo === "M"
-                ? "Masculino"
-                : p.Sexo === "F" || p.sexo === "F"
-                ? "Femenino"
-                : ""
-            }</td>
-            <td>
-                <div class="action-buttons">
-                <button class="action-btn view" title="Ver" onclick="viewPaciente(${
-                  p.IdPaciente || p.idPaciente
-                })">
-                    <i class="fas fa-eye"></i>
+ tbody.innerHTML = data.map(p => `
+    <tr>
+        <td>${p.TipoDocumento || p.tipoDocumento || ""}</td>
+        <td>${p.NumeroDocumento || p.numeroDocumento || ""}</td>
+        <td>${(p.ApellidoPaterno || p.apellidoPaterno || "") + " " + (p.ApellidoMaterno || p.apellidoMaterno || "") + ", " + (p.Nombre || p.nombre || "")}</td>
+        <td>${(p.Edad !== undefined ? p.Edad : p.edad !== undefined ? p.edad : "-") + " años"}</td>
+        <td>${(p.Sexo === "M" || p.sexo === "M") ? "Masculino" : (p.Sexo === "F" || p.sexo === "F") ? "Femenino" : ""}</td>
+        <td>
+            <div style="display: flex; gap: 8px;">
+                <button style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 6px; border: none; cursor: pointer; background-color: #007bff; color: white; transition: all 0.2s ease;" 
+                        title="Editar Historia Clínica" 
+                        onclick="editarHistoriaClinica(${p.IdPaciente || p.idPaciente})"
+                        onmouseover="this.style.backgroundColor='#0056b3'; this.style.transform='translateY(-2px)';"
+                        onmouseout="this.style.backgroundColor='#007bff'; this.style.transform='translateY(0)';">
+                    <i class="fas fa-edit" style="margin: 0;"></i>
                 </button>
-                <button class="action-btn edit" title="Editar" onclick="editPaciente(${
-                  p.IdPaciente || p.idPaciente
-                })">
-                    <i class="fas fa-edit"></i>
+                <button style="display: inline-flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background-color: #28a745; color: white; transition: all 0.2s ease; font-size: 14px; font-weight: 500;" 
+                        title="Solicitar Cita" 
+                        onclick="solicitarCita(${p.IdPaciente || p.idPaciente})"
+                        onmouseover="this.style.backgroundColor='#218838'; this.style.transform='translateY(-2px)';"
+                        onmouseout="this.style.backgroundColor='#28a745'; this.style.transform='translateY(0)';">
+                    <i class="fas fa-calendar-plus" style="margin-right: 6px;"></i>
+                    Solicitar Cita
                 </button>
             </div>
-            </td>
-        </tr>
-    `
-    )
-    .join("");
+        </td>
+    </tr>
+`).join("");
 }
 
 /* // Calcular edad (puedes ajustar según tu modelo)

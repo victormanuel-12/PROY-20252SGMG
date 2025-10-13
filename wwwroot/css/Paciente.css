@@ -72,6 +72,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
     font-size: 14px;
+    padding: 8px 12px;
 }
 
 .action-btn:hover {
@@ -98,5 +99,5 @@
 }
 
 .action-btn i {
-    margin: 0;
+    margin: 6px;
 }
