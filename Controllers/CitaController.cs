@@ -1,0 +1,395 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SGMG.Data;
+using SGMG.Models;
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
+using SGMG.Dtos.Request;
+
+namespace SGMG.Controllers
+{
+  public class CitaController : Controller
+  {
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<CitaController> _logger;
+
+    public CitaController(ApplicationDbContext context, ILogger<CitaController> logger)
+    {
+      _context = context;
+      _logger = logger;
+    }
+
+    public IActionResult HorarioMedico(int? idMedico, int? idPaciente, int? semana)
+    {
+      if (idMedico == null || idMedico == 0)
+      {
+        _logger.LogWarning("Intento de acceder a HorarioMedico sin idMedico válido");
+        return RedirectToAction("VisualCitas");
+      }
+
+      _logger.LogInformation($"Acceso a HorarioMedico - IdMedico: {idMedico}, IdPaciente: {idPaciente}, Semana: {semana}");
+
+      ViewBag.Semana = semana ?? 0;
+      ViewBag.IdMedico = idMedico;
+      ViewBag.IdPaciente = idPaciente;
+      ViewData["Title"] = $"Horario del Médico - ID: {idMedico}";
+
+      return View();
+    }
+
+    [HttpGet]
+    public IActionResult ObtenerDatosCalendario(int idMedico, int semana)
+    {
+      try
+      {
+        _logger.LogInformation("╔════════════════════════════════════════════════════════════════╗");
+        _logger.LogInformation("║           INICIO ObtenerDatosCalendario                        ║");
+        _logger.LogInformation("╚════════════════════════════════════════════════════════════════╝");
+        _logger.LogInformation($"📋 Parámetros recibidos:");
+        _logger.LogInformation($"   → IdMedico: {idMedico}");
+        _logger.LogInformation($"   → Semana: {semana}");
+
+        // Buscar médico
+        _logger.LogInformation($"🔍 Buscando médico con ID {idMedico}...");
+        var medico = _context.Medicos
+            .Include(m => m.ConsultorioAsignado)
+            .FirstOrDefault(m => m.IdMedico == idMedico);
+
+        if (medico == null)
+        {
+          _logger.LogWarning($"❌ Médico con ID {idMedico} NO ENCONTRADO");
+          return Json(new { error = true, mensaje = "Médico no encontrado" });
+        }
+
+        _logger.LogInformation($"✅ Médico encontrado:");
+        _logger.LogInformation($"   → Nombre: {medico.Nombre} {medico.ApellidoPaterno} {medico.ApellidoMaterno}");
+        _logger.LogInformation($"   → Turno: {medico.Turno}");
+        _logger.LogInformation($"   → Consultorio: {medico.ConsultorioAsignado?.Nombre ?? "No asignado"}");
+
+        // Calcular rango de fechas de la semana
+        _logger.LogInformation($"📅 Calculando rango de fechas...");
+        var hoy = DateTime.Today;
+        _logger.LogInformation($"   → Fecha de hoy: {hoy:yyyy-MM-dd} ({hoy:dddd})");
+
+        var diasDesdeInicio = (int)hoy.DayOfWeek - (int)DayOfWeek.Monday;
+        if (diasDesdeInicio < 0) diasDesdeInicio += 7;
+
+        _logger.LogInformation($"   → Días desde el lunes: {diasDesdeInicio}");
+
+        var inicioSemanaBase = hoy.AddDays(-diasDesdeInicio);
+        _logger.LogInformation($"   → Inicio semana base (lunes actual): {inicioSemanaBase:yyyy-MM-dd}");
+
+        var inicioSemana = inicioSemanaBase.AddDays(semana * 7).Date;
+        var finSemana = inicioSemana.AddDays(6);
+
+        _logger.LogInformation($"   → Rango buscado:");
+        _logger.LogInformation($"      • Inicio: {inicioSemana:yyyy-MM-dd dddd}");
+        _logger.LogInformation($"      • Fin:    {finSemana:yyyy-MM-dd dddd}");
+
+        // Obtener TODAS las disponibilidades del médico
+        _logger.LogInformation($"🔍 Buscando disponibilidades del médico en BD...");
+        var todasDisponibilidades = _context.DisponibilidadesSemanales
+            .Where(d => d.IdMedico == idMedico)
+            .OrderBy(d => d.FechaInicioSemana)
+            .ToList();
+
+        _logger.LogInformation($"📊 Total de disponibilidades en BD: {todasDisponibilidades.Count}");
+
+        if (todasDisponibilidades.Count == 0)
+        {
+          _logger.LogWarning($"⚠️ El médico NO tiene ninguna disponibilidad registrada");
+        }
+        else
+        {
+          _logger.LogInformation($"📋 Listado de disponibilidades:");
+          int contador = 1;
+          foreach (var disp in todasDisponibilidades)
+          {
+            _logger.LogInformation($"   [{contador}] ID: {disp.IdDisponibilidad}");
+            _logger.LogInformation($"       → Inicio: {disp.FechaInicioSemana:yyyy-MM-dd}");
+            _logger.LogInformation($"       → Fin:    {disp.FechaFinSemana:yyyy-MM-dd}");
+            _logger.LogInformation($"       → Citas:  {disp.CitasActuales}/{disp.CitasMaximas}");
+            contador++;
+          }
+        }
+
+        // Comparar solo las fechas sin hora
+        _logger.LogInformation($"🔍 Buscando disponibilidad para fecha inicio: {inicioSemana:yyyy-MM-dd}");
+        var disponibilidad = todasDisponibilidades
+            .FirstOrDefault(d => d.FechaInicioSemana.Date == inicioSemana.Date);
+
+        if (disponibilidad == null)
+        {
+          _logger.LogWarning($"❌ NO SE ENCONTRÓ disponibilidad para la semana solicitada");
+          _logger.LogWarning($"   → Fecha buscada: {inicioSemana:yyyy-MM-dd}");
+          _logger.LogWarning($"   → Solución: Registrar disponibilidad para esta semana en la tabla DisponibilidadesSemanales");
+
+          return Json(new
+          {
+            error = true,
+            mensaje = "Semana aún no establecida para el médico"
+          });
+        }
+
+        _logger.LogInformation($"✅ Disponibilidad ENCONTRADA:");
+        _logger.LogInformation($"   → ID Disponibilidad: {disponibilidad.IdDisponibilidad}");
+        _logger.LogInformation($"   → Citas Actuales: {disponibilidad.CitasActuales}");
+        _logger.LogInformation($"   → Citas Máximas: {disponibilidad.CitasMaximas}");
+        _logger.LogInformation($"   → Disponibles: {disponibilidad.CitasMaximas - disponibilidad.CitasActuales}");
+
+        // Obtener citas ocupadas en ese rango
+        _logger.LogInformation($"🔍 Buscando citas ocupadas en el rango de fechas...");
+        var citasOcupadas = _context.Citas
+            .Where(c => c.IdMedico == idMedico &&
+                       c.FechaCita >= inicioSemana &&
+                       c.FechaCita <= finSemana)
+            .Select(c => new
+            {
+              fecha = c.FechaCita.ToString("yyyy-MM-dd"),
+              hora = c.HoraCita.ToString(@"hh\:mm")
+            })
+            .ToList();
+
+        _logger.LogInformation($"📊 Total de citas ocupadas: {citasOcupadas.Count}");
+
+        if (citasOcupadas.Count > 0)
+        {
+          _logger.LogInformation($"📋 Listado de horarios ocupados:");
+          int contador = 1;
+          foreach (var cita in citasOcupadas)
+          {
+            _logger.LogInformation($"   [{contador}] Fecha: {cita.fecha}, Hora: {cita.hora}");
+            contador++;
+          }
+        }
+        else
+        {
+          _logger.LogInformation($"✅ No hay citas ocupadas en esta semana (todos los horarios disponibles)");
+        }
+
+        // Generar fechas de la semana
+        var fechasSemana = new List<string>();
+        for (int i = 0; i < 7; i++)
+        {
+          fechasSemana.Add(inicioSemana.AddDays(i).ToString("yyyy-MM-dd"));
+        }
+
+        var nombreCompleto = $"{medico.Nombre} {medico.ApellidoPaterno} {medico.ApellidoMaterno}";
+
+        _logger.LogInformation("╔════════════════════════════════════════════════════════════════╗");
+        _logger.LogInformation("║           FIN ObtenerDatosCalendario - ÉXITO ✅                ║");
+        _logger.LogInformation("╚════════════════════════════════════════════════════════════════╝");
+
+        return Json(new
+        {
+          medicoNombre = nombreCompleto,
+          turno = medico.Turno,
+          fechasSemana = fechasSemana,
+          citasOcupadas = citasOcupadas,
+          inicioSemana = inicioSemana.ToString("dd/MM/yyyy"),
+          finSemana = finSemana.ToString("dd/MM/yyyy")
+        });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError("╔════════════════════════════════════════════════════════════════╗");
+        _logger.LogError("║                   ERROR CRÍTICO ❌                              ║");
+        _logger.LogError("╚════════════════════════════════════════════════════════════════╝");
+        _logger.LogError($"💥 Mensaje: {ex.Message}");
+        _logger.LogError($"📍 StackTrace: {ex.StackTrace}");
+
+        return Json(new { error = true, mensaje = "Error al cargar calendario: " + ex.Message });
+      }
+    }
+
+    [HttpGet]
+    public IActionResult ObtenerDatosModalCita(int idMedico, int idPaciente)
+    {
+      try
+      {
+        _logger.LogInformation("╔════════════════════════════════════════════════════════════════╗");
+        _logger.LogInformation("║           INICIO ObtenerDatosModalCita                         ║");
+        _logger.LogInformation("╚════════════════════════════════════════════════════════════════╝");
+        _logger.LogInformation($"📋 Parámetros:");
+        _logger.LogInformation($"   → IdMedico: {idMedico}");
+        _logger.LogInformation($"   → IdPaciente: {idPaciente}");
+
+        _logger.LogInformation($"🔍 Buscando médico...");
+        var medico = _context.Medicos
+            .Include(m => m.ConsultorioAsignado)
+            .FirstOrDefault(m => m.IdMedico == idMedico);
+
+        _logger.LogInformation($"🔍 Buscando paciente...");
+        var paciente = _context.Pacientes
+            .FirstOrDefault(p => p.IdPaciente == idPaciente);
+
+        if (medico == null)
+        {
+          _logger.LogWarning($"❌ Médico con ID {idMedico} NO ENCONTRADO");
+          return Json(new { error = true, mensaje = "Médico no encontrado" });
+        }
+
+        if (paciente == null)
+        {
+          _logger.LogWarning($"❌ Paciente con ID {idPaciente} NO ENCONTRADO");
+          return Json(new { error = true, mensaje = "Paciente no encontrado" });
+        }
+
+        var nombreMedico = $"Dr. {medico.Nombre} {medico.ApellidoPaterno} {medico.ApellidoMaterno}";
+        var nombrePaciente = $"{paciente.Nombre} {paciente.ApellidoPaterno} {paciente.ApellidoMaterno}";
+        var consultorio = medico.ConsultorioAsignado?.Nombre ?? "Consultorio A";
+
+        _logger.LogInformation($"✅ Datos encontrados:");
+        _logger.LogInformation($"👨‍⚕️ Médico:");
+        _logger.LogInformation($"   → Nombre: {nombreMedico}");
+        _logger.LogInformation($"   → Consultorio: {consultorio}");
+        _logger.LogInformation($"👤 Paciente:");
+        _logger.LogInformation($"   → Nombre: {nombrePaciente}");
+        _logger.LogInformation($"   → DNI: {paciente.NumeroDocumento}");
+        _logger.LogInformation($"   → Edad: {paciente.Edad} años");
+
+        _logger.LogInformation("╔════════════════════════════════════════════════════════════════╗");
+        _logger.LogInformation("║           FIN ObtenerDatosModalCita - ÉXITO ✅                 ║");
+        _logger.LogInformation("╚════════════════════════════════════════════════════════════════╝");
+
+        return Json(new
+        {
+          medicoNombre = nombreMedico,
+          consultorio = consultorio,
+          paciente = new
+          {
+            dni = paciente.NumeroDocumento,
+            historiaClinica = $"HC-{DateTime.Now.Year}-{paciente.IdPaciente.ToString().PadLeft(6, '0')}",
+            nombreCompleto = nombrePaciente,
+            edad = paciente.Edad,
+            telefono = "902315786",
+            correo = "No hay correo registrado"
+          }
+        });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError("╔════════════════════════════════════════════════════════════════╗");
+        _logger.LogError("║                   ERROR CRÍTICO ❌                              ║");
+        _logger.LogError("╚════════════════════════════════════════════════════════════════╝");
+        _logger.LogError($"💥 Mensaje: {ex.Message}");
+        _logger.LogError($"📍 StackTrace: {ex.StackTrace}");
+
+        return Json(new { error = true, mensaje = "Error: " + ex.Message });
+      }
+    }
+
+    [HttpPost]
+    public IActionResult RegistrarCita([FromBody] CitaRegistroDto datos)
+    {
+      try
+      {
+        _logger.LogInformation("╔════════════════════════════════════════════════════════════════╗");
+        _logger.LogInformation("║                INICIO RegistrarCita                            ║");
+        _logger.LogInformation("╚════════════════════════════════════════════════════════════════╝");
+        _logger.LogInformation($"📋 Datos recibidos:");
+        _logger.LogInformation($"   → IdMedico: {datos.IdMedico}");
+        _logger.LogInformation($"   → IdPaciente: {datos.IdPaciente}");
+        _logger.LogInformation($"   → FechaCita: {datos.FechaCita}");
+        _logger.LogInformation($"   → HoraCita: {datos.HoraCita}");
+        _logger.LogInformation($"   → Semana: {datos.Semana}");
+
+        _logger.LogInformation($"🔍 Buscando médico...");
+        var medico = _context.Medicos
+            .Include(m => m.ConsultorioAsignado)
+            .FirstOrDefault(m => m.IdMedico == datos.IdMedico);
+
+        if (medico == null)
+        {
+          _logger.LogWarning($"❌ Médico con ID {datos.IdMedico} NO ENCONTRADO");
+          return Json(new { success = false, mensaje = "Médico no encontrado" });
+        }
+
+        _logger.LogInformation($"✅ Médico encontrado: {medico.Nombre} {medico.ApellidoPaterno}");
+
+        // Parsear hora
+        _logger.LogInformation($"🕐 Parseando hora {datos.HoraCita}...");
+        var horaPartes = datos.HoraCita.Split(':');
+        var horaCita = new TimeSpan(int.Parse(horaPartes[0]), int.Parse(horaPartes[1]), 0);
+        _logger.LogInformation($"✅ Hora parseada correctamente: {horaCita}");
+
+        // Crear cita
+        _logger.LogInformation($"📝 Creando registro de cita...");
+        var nuevaCita = new Cita
+        {
+          IdPaciente = datos.IdPaciente,
+          IdMedico = datos.IdMedico,
+          Especialidad = "Medicina General",
+          FechaCita = DateTime.Parse(datos.FechaCita),
+          HoraCita = horaCita,
+          Consultorio = medico.ConsultorioAsignado?.Nombre ?? "Consultorio A",
+          EstadoCita = "Reservada",
+          FechaRegistro = DateTime.Now
+        };
+
+        _context.Citas.Add(nuevaCita);
+        _logger.LogInformation($"✅ Cita agregada al contexto de EF Core");
+
+        // Actualizar disponibilidad semanal
+        _logger.LogInformation($"📅 Calculando semana para actualizar disponibilidad...");
+        var hoy = DateTime.Today;
+        var diasDesdeInicio = (int)hoy.DayOfWeek - (int)DayOfWeek.Monday;
+        if (diasDesdeInicio < 0) diasDesdeInicio += 7;
+
+        var inicioSemanaBase = hoy.AddDays(-diasDesdeInicio);
+        var inicioSemana = inicioSemanaBase.AddDays(datos.Semana * 7).Date;
+
+        _logger.LogInformation($"🔍 Buscando disponibilidad semanal:");
+        _logger.LogInformation($"   → Fecha inicio semana: {inicioSemana:yyyy-MM-dd}");
+
+        var disponibilidad = _context.DisponibilidadesSemanales
+            .FirstOrDefault(d => d.IdMedico == datos.IdMedico &&
+                               d.FechaInicioSemana.Date == inicioSemana.Date);
+
+        if (disponibilidad != null)
+        {
+          _logger.LogInformation($"✅ Disponibilidad encontrada:");
+          _logger.LogInformation($"   → ID: {disponibilidad.IdDisponibilidad}");
+          _logger.LogInformation($"   → Citas actuales ANTES: {disponibilidad.CitasActuales}");
+
+          disponibilidad.CitasActuales++;
+
+          _logger.LogInformation($"   → Citas actuales DESPUÉS: {disponibilidad.CitasActuales}");
+          _logger.LogInformation($"   → Citas disponibles: {disponibilidad.CitasMaximas - disponibilidad.CitasActuales}");
+        }
+        else
+        {
+          _logger.LogWarning($"⚠️ No se encontró disponibilidad semanal para actualizar");
+          _logger.LogWarning($"   → La cita se registrará pero no se actualizará el contador");
+        }
+
+        _logger.LogInformation($"💾 Guardando cambios en la base de datos...");
+        var registrosAfectados = _context.SaveChanges();
+        _logger.LogInformation($"✅ Guardado exitoso. Registros afectados: {registrosAfectados}");
+
+        _logger.LogInformation("╔════════════════════════════════════════════════════════════════╗");
+        _logger.LogInformation("║              FIN RegistrarCita - ÉXITO ✅                       ║");
+        _logger.LogInformation("╚════════════════════════════════════════════════════════════════╝");
+
+        return Json(new { success = true, mensaje = "Cita registrada exitosamente" });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError("╔════════════════════════════════════════════════════════════════╗");
+        _logger.LogError("║                   ERROR CRÍTICO ❌                              ║");
+        _logger.LogError("╚════════════════════════════════════════════════════════════════╝");
+        _logger.LogError($"💥 Mensaje: {ex.Message}");
+        _logger.LogError($"📍 StackTrace: {ex.StackTrace}");
+
+        if (ex.InnerException != null)
+        {
+          _logger.LogError($"🔍 Inner Exception: {ex.InnerException.Message}");
+        }
+
+        return Json(new { success = false, mensaje = "Error al registrar cita: " + ex.Message });
+      }
+    }
+  }
+}

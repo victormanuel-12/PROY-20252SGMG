@@ -1,0 +1,731 @@
+@{
+    ViewData["Title"] = "Horario del Médico";
+    Layout = "~/Views/Shared/_LayoutA.cshtml";
+}
+
+<style>
+  .calendario-container {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+
+  .calendario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 5px;
+  }
+
+  .calendario-titulo {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .calendario-controles {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn-nav {
+    padding: 8px 16px;
+    border: 1px solid #3498db;
+    background: white;
+    color: #3498db;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .btn-nav:hover {
+    background: #3498db;
+    color: white;
+  }
+
+  .semana-info {
+    font-size: 0.95rem;
+    color: #555;
+    padding: 0 15px;
+  }
+
+  .calendario-grid {
+    overflow-x: auto;
+  }
+
+  .calendario-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+  }
+
+  .calendario-table th {
+    background: #3498db;
+    color: white;
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .calendario-table th:first-child {
+    background: #2c3e50;
+    min-width: 120px;
+  }
+
+  .horario-cell {
+    background: #34495e;
+    color: white;
+    padding: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    border: 1px solid #2c3e50;
+  }
+
+  .calendario-table td {
+    border: 1px solid #ddd;
+    padding: 4px;
+    text-align: center;
+    height: 50px;
+  }
+
+  .slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1.2rem;
+  }
+
+  .slot.disponible {
+    background: #27ae60;
+    color: white;
+  }
+
+  .slot.disponible:hover {
+    background: #229954;
+    transform: scale(1.05);
+  }
+
+  .slot.ocupado {
+    background: #e74c3c;
+    color: white;
+    cursor: not-allowed;
+  }
+
+  .slot.vacio {
+    background: #ecf0f1;
+    cursor: default;
+  }
+
+  .leyenda {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 5px;
+  }
+
+  .leyenda-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .leyenda-color {
+    width: 25px;
+    height: 25px;
+    border-radius: 4px;
+  }
+
+  .mensaje-error {
+    padding: 20px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 5px;
+    color: #856404;
+    text-align: center;
+    margin: 20px 0;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+  }
+
+  .modal-section {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+  }
+
+  .modal-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #3498db;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .info-item {
+    padding: 10px;
+    background: white;
+    border-radius: 4px;
+    border-left: 3px solid #3498db;
+  }
+
+  .info-label {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    margin-bottom: 3px;
+  }
+
+  .info-value {
+    font-size: 0.95rem;
+    color: #2c3e50;
+    font-weight: 500;
+  }
+
+  .btn-confirmar {
+    background: #27ae60;
+    color: white;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+  }
+
+  .btn-confirmar:hover {
+    background: #229954;
+  }
+
+  .btn-cancelar {
+    background: #95a5a6;
+    color: white;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+  }
+
+  .btn-cancelar:hover {
+    background: #7f8c8d;
+  }
+
+  /* Estilos del Modal - CRÍTICOS */
+  #modalCita {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    overflow: auto;
+  }
+
+  #modalCita.show {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #modalCita .modal-content {
+    background: white;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+  }
+
+  #modalCita .modal-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+    border-radius: 10px 10px 0 0;
+  }
+
+  #modalCita .modal-header h2 {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin: 0;
+  }
+
+  #modalCita .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+  }
+
+  #modalCita .modal-close:hover {
+    color: #333;
+  }
+
+  #modalCita .modal-body {
+    padding: 25px;
+  }
+
+  #modalCita .modal-footer {
+    padding: 20px 25px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #f8f9fa;
+    border-radius: 0 0 10px 10px;
+  }
+</style>
+
+<div class="calendario-container">
+  <div class="calendario-header">
+    <div class="calendario-titulo" id="tituloCalendario">
+      Horario del Médico
+    </div>
+    <div class="calendario-controles">
+      <button class="btn-nav" id="btnAnterior">← Semana Anterior</button>
+      <span class="semana-info" id="semanaInfo">Semana Actual</span>
+      <button class="btn-nav" id="btnSiguiente">Semana Siguiente →</button>
+    </div>
+  </div>
+
+  <div id="calendarioContent">
+    <div class="loading">
+      <p>Cargando calendario...</p>
+    </div>
+  </div>
+
+  <div class="leyenda">
+    <div class="leyenda-item">
+      <div class="leyenda-color" style="background: #27ae60;">✓</div>
+      <span>Disponible</span>
+    </div>
+    <div class="leyenda-item">
+      <div class="leyenda-color" style="background: #e74c3c;">✗</div>
+      <span>Ocupado</span>
+    </div>
+    <div class="leyenda-item">
+      <div class="leyenda-color" style="background: #ecf0f1;"></div>
+      <span>No Asignado</span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmación de Cita -->
+<div id="modalCita" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>RESERVA DE CITA MÉDICA</h2>
+      <button class="modal-close" onclick="cerrarModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">Resumen de la Cita Seleccionada</div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Médico</div>
+            <div class="info-value" id="modalMedicoNombre">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Especialidad</div>
+            <div class="info-value">Medicina General</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Fecha</div>
+            <div class="info-value" id="modalFecha">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Hora</div>
+            <div class="info-value" id="modalHora">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Consultorio</div>
+            <div class="info-value" id="modalConsultorio">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Duración</div>
+            <div class="info-value">20 minutos</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">👤 Datos del Paciente</div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">DNI</div>
+            <div class="info-value" id="modalPacienteDni">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Historia Clínica</div>
+            <div class="info-value" id="modalPacienteHC">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Nombre Completo</div>
+            <div class="info-value" id="modalPacienteNombre">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Edad</div>
+            <div class="info-value" id="modalPacienteEdad">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Teléfono</div>
+            <div class="info-value" id="modalPacienteTelefono">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Correo Electrónico</div>
+            <div class="info-value" id="modalPacienteCorreo">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="cerrarModal()">Volver</button>
+      <button class="btn-confirmar" onclick="confirmarCita()">Confirmar Cita</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let semanaActual = @ViewBag.Semana;
+  const idMedico = @ViewBag.IdMedico;
+  const idPaciente = @(ViewBag.IdPaciente ?? "null");
+  let datosModal = {};
+
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Aplicación iniciada');
+    console.log('   → semanaActual:', semanaActual);
+    console.log('   → idMedico:', idMedico);
+    console.log('   → idPaciente:', idPaciente);
+    
+    // Verificar que el modal existe
+    const modal = document.getElementById('modalCita');
+    console.log('   → Modal en DOM:', modal ? '✅ Encontrado' : '❌ NO encontrado');
+    if (modal) {
+      console.log('   → Display inicial del modal:', window.getComputedStyle(modal).display);
+    }
+    
+    cargarCalendario();
+
+    document.getElementById('btnSiguiente').addEventListener('click', function() {
+      semanaActual++;
+      cargarCalendario();
+    });
+
+    document.getElementById('btnAnterior').addEventListener('click', function() {
+      semanaActual--;
+      cargarCalendario();
+    });
+  });
+
+  function cargarCalendario() {
+    console.log('🔍 cargarCalendario llamado');
+    console.log('   → Semana:', semanaActual);
+    console.log('   → IdMedico:', idMedico);
+
+    const content = document.getElementById('calendarioContent');
+    content.innerHTML = '<div class="loading"><p>Cargando calendario...</p></div>';
+
+    const url = `/Cita/ObtenerDatosCalendario?idMedico=${idMedico}&semana=${semanaActual}`;
+    console.log('🌐 Llamando a:', url);
+
+    fetch(url)
+      .then(response => {
+        console.log('📡 Respuesta recibida, status:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('📦 Datos recibidos:', data);
+
+        if (data.error) {
+          console.warn('⚠️ Error:', data.mensaje);
+          content.innerHTML = `<div class="mensaje-error">${data.mensaje}</div>`;
+          return;
+        }
+
+        console.log('✅ Generando calendario...');
+        actualizarInfoSemana(data);
+        generarCalendario(data);
+      })
+      .catch(error => {
+        console.error('💥 Error en fetch:', error);
+        content.innerHTML = '<div class="mensaje-error">Error al cargar el calendario</div>';
+      });
+  }
+
+  function actualizarInfoSemana(data) {
+    const textoSemana = semanaActual === 0 ? 'Semana Actual' :
+                       semanaActual === 1 ? 'Siguiente Semana' :
+                       semanaActual > 1 ? `En ${semanaActual} Semanas` :
+                       semanaActual === -1 ? 'Semana Pasada' :
+                       `Hace ${Math.abs(semanaActual)} Semanas`;
+    
+    document.getElementById('semanaInfo').textContent = textoSemana;
+    document.getElementById('tituloCalendario').textContent = 
+      `Horario del Dr. ${data.medicoNombre} - ${data.turno}`;
+  }
+
+  function generarCalendario(data) {
+    const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const fechas = data.fechasSemana;
+    
+    let html = '<div class="calendario-grid"><table class="calendario-table">';
+    html += '<thead><tr><th>Horario</th>';
+    
+    dias.forEach((dia, idx) => {
+      html += `<th>${dia}<br><small>${fechas[idx]}</small></th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    const horarios = generarHorarios(data.turno);
+    
+    horarios.forEach(horario => {
+      html += '<tr>';
+      html += `<td class="horario-cell">${horario.texto}</td>`;
+      
+      dias.forEach((dia, idx) => {
+        const fecha = fechas[idx];
+        const horaInicio = horario.horaInicio;
+        const ocupado = data.citasOcupadas.some(c => 
+          c.fecha === fecha && c.hora === horaInicio
+        );
+
+        if (ocupado) {
+          html += '<td><div class="slot ocupado" title="No disponible">✗</div></td>';
+        } else {
+          html += `<td><div class="slot disponible" 
+                    onclick="abrirModal('${fecha}', '${horaInicio}', '${horario.texto}')" 
+                    title="Disponible - Click para reservar">✓</div></td>`;
+        }
+      });
+      
+      html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    document.getElementById('calendarioContent').innerHTML = html;
+  }
+
+  function generarHorarios(turno) {
+    const horarios = [];
+    let horaInicio, horaFin;
+
+    if (turno === 'Mañana') {
+      horaInicio = 8;
+      horaFin = 14;
+    } else {
+      horaInicio = 14;
+      horaFin = 20;
+    }
+
+    for (let h = horaInicio; h < horaFin; h++) {
+      for (let m = 0; m < 60; m += 20) {
+        const hActual = h.toString().padStart(2, '0');
+        const mActual = m.toString().padStart(2, '0');
+        const mSiguiente = ((m + 20) % 60).toString().padStart(2, '0');
+        const hSiguiente = (m === 40 ? h + 1 : h).toString().padStart(2, '0');
+
+        horarios.push({
+          horaInicio: `${hActual}:${mActual}`,
+          texto: `${hActual}:${mActual} - ${hSiguiente}:${mSiguiente}`
+        });
+      }
+    }
+
+    return horarios;
+  }
+
+  function abrirModal(fecha, hora, horarioTexto) {
+    console.log('🔍 abrirModal llamado');
+    console.log('   → Fecha:', fecha);
+    console.log('   → Hora:', hora);
+    console.log('   → IdPaciente:', idPaciente);
+    console.log('   → IdMedico:', idMedico);
+
+    if (!idPaciente || idPaciente === 'null') {
+      console.error('❌ No hay paciente seleccionado');
+      if (typeof showAlert !== 'undefined') {
+        showAlert('No se ha seleccionado un paciente', 'error');
+      } else {
+        alert('No se ha seleccionado un paciente');
+      }
+      return;
+    }
+
+    datosModal = { fecha, hora, horarioTexto };
+    console.log('✅ datosModal guardado:', datosModal);
+
+    const url = `/Cita/ObtenerDatosModalCita?idMedico=${idMedico}&idPaciente=${idPaciente}`;
+    console.log('🌐 Llamando a:', url);
+
+    fetch(url)
+      .then(response => {
+        console.log('📡 Respuesta recibida, status:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('📦 Datos recibidos:', data);
+
+        if (data.error) {
+          console.error('❌ Error en respuesta:', data.mensaje);
+          if (typeof showAlert !== 'undefined') {
+            showAlert(data.mensaje, 'error');
+          } else {
+            alert(data.mensaje);
+          }
+          return;
+        }
+
+        console.log('✅ Llenando modal con datos...');
+        document.getElementById('modalMedicoNombre').textContent = data.medicoNombre;
+        document.getElementById('modalConsultorio').textContent = data.consultorio;
+        document.getElementById('modalFecha').textContent = formatearFecha(fecha);
+        document.getElementById('modalHora').textContent = hora;
+
+        document.getElementById('modalPacienteDni').textContent = data.paciente.dni;
+        document.getElementById('modalPacienteHC').textContent = data.paciente.historiaClinica;
+        document.getElementById('modalPacienteNombre').textContent = data.paciente.nombreCompleto;
+        document.getElementById('modalPacienteEdad').textContent = data.paciente.edad + ' años';
+        document.getElementById('modalPacienteTelefono').textContent = data.paciente.telefono;
+        document.getElementById('modalPacienteCorreo').textContent = data.paciente.correo;
+
+        console.log('✅ Mostrando modal...');
+        const modal = document.getElementById('modalCita');
+        console.log('   → Modal encontrado:', modal);
+        console.log('   → Display antes:', window.getComputedStyle(modal).display);
+        
+        modal.classList.add('show');
+        
+        console.log('   → Clase "show" agregada');
+        console.log('   → Display después:', window.getComputedStyle(modal).display);
+        console.log('   → classList:', modal.classList);
+      })
+      .catch(error => {
+        console.error('💥 Error en fetch:', error);
+        if (typeof showAlert !== 'undefined') {
+          showAlert('Error al cargar datos del modal', 'error');
+        } else {
+          alert('Error al cargar datos del modal: ' + error.message);
+        }
+      });
+  }
+
+  function cerrarModal() {
+    console.log('🔍 cerrarModal llamado');
+    const modal = document.getElementById('modalCita');
+    console.log('   → Modal encontrado:', modal);
+    console.log('   → Display antes:', window.getComputedStyle(modal).display);
+    
+    modal.classList.remove('show');
+    
+    console.log('   → Clase "show" removida');
+    console.log('   → Display después:', window.getComputedStyle(modal).display);
+  }
+
+  function confirmarCita() {
+    console.log('🔍 confirmarCita llamado');
+    console.log('   → datosModal:', datosModal);
+
+    const citaData = {
+      idMedico: idMedico,
+      idPaciente: idPaciente,
+      fechaCita: datosModal.fecha,
+      horaCita: datosModal.hora,
+      semana: semanaActual
+    };
+
+    console.log('📋 Datos de cita a enviar:', citaData);
+
+    fetch('/Cita/RegistrarCita', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(citaData)
+    })
+    .then(response => {
+      console.log('📡 Respuesta recibida, status:', response.status);
+      return response.json();
+    })
+    .then(data => {
+      console.log('📦 Respuesta del servidor:', data);
+      
+      if (data.success) {
+        console.log('✅ Cita registrada exitosamente');
+        if (typeof showAlert !== 'undefined') {
+          showAlert('Cita registrada exitosamente', 'success');
+        } else {
+          alert('Cita registrada exitosamente');
+        }
+        cerrarModal();
+        cargarCalendario();
+      } else {
+        console.error('❌ Error al registrar:', data.mensaje);
+        if (typeof showAlert !== 'undefined') {
+          showAlert(data.mensaje || 'Error al registrar la cita', 'error');
+        } else {
+          alert(data.mensaje || 'Error al registrar la cita');
+        }
+      }
+    })
+    .catch(error => {
+      console.error('💥 Error en fetch:', error);
+      if (typeof showAlert !== 'undefined') {
+        showAlert('Error al confirmar la cita', 'error');
+      } else {
+        alert('Error al confirmar la cita: ' + error.message);
+      }
+    });
+  }
+
+  function formatearFecha(fecha) {
+    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const [year, month, day] = fecha.split('-');
+    const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const date = new Date(year, month - 1, day);
+    return `${dias[date.getDay()]}, ${parseInt(day)} de ${meses[parseInt(month) - 1]} de ${year}`;
+  }
+
+  window.onclick = function(event) {
+    const modal = document.getElementById('modalCita');
+    if (event.target === modal) {
+      cerrarModal();
+    }
+  }
+</script>
