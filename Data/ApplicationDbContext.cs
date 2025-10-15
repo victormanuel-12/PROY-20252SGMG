@@ -23,4 +23,5 @@ public class ApplicationDbContext : IdentityDbContext
   public DbSet<DomicilioPaciente> DomiciliosPacientes { get; set; }
   public DbSet<Consultorio> Consultorios { get; set; }
   public DbSet<Cargos> Cargos { get; set; }
+  public DbSet<DisponibilidadSemanal> DisponibilidadesSemanales { get; set; }
 }

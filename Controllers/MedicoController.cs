@@ -9,9 +9,13 @@ using SGMG.Models;
 using SGMG.Services;
 using SGMG.Dtos.Response;
 using SGMG.Dtos.Request.Medico;
+using SGMG.Dtos;
+using SGMG.Repository;
+using SGMG.Dtos.Request;
 
 namespace SGMG.Controllers
 {
+  [ApiController]
   [Route("api/[controller]")]
   public class MedicoController : Controller
   {
@@ -65,6 +69,29 @@ namespace SGMG.Controllers
     {
       return await _medicoService.GetMedicosFilteredAsync(numeroDni, idConsultorio, estado, fechaInicio, fechaFin, turno);
     }
+
+    [HttpPost]
+    [Route("/medicos/disponibilidad")]
+    public async Task<GenericResponse<DisponibilidadSemanaResponse>> GetMedicosDisponiblesPorSemana(
+     [FromBody] FiltroDisponibilidadRequest request)
+    {
+      _logger.LogInformation(
+          "Endpoint: POST /medicos/disponibilidad - Buscando disponibilidad para semana {Semana} con filtros: DNI={DNI}, Consultorio={Consultorio}, Estado={Estado}, Turno={Turno}",
+          request.Semana, request.NumeroDni, request.IdConsultorio, request.Estado, request.Turno);
+
+
+      var response = await _medicoService.GetMedicosDisponiblesPorSemanaAsync(
+          request.Semana, request.NumeroDni, request.IdConsultorio, request.Estado, request.Turno);
+
+      return response;
+
+
+    }
+
+
+
+
+
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()

@@ -124,7 +124,6 @@ async function handlePacienteSearch(e) {
     showAlert("Error al buscar pacientes.", "error");
   }
 }
-
 // Renderizar tabla de pacientes
 function renderPacienteTable(data) {
   const tbody = document.getElementById("pacienteTableBody");
@@ -139,18 +138,40 @@ function renderPacienteTable(data) {
 
   if (addHistoriaSection) addHistoriaSection.style.display = "none";
 
- tbody.innerHTML = data.map(p => `
+  tbody.innerHTML = data
+    .map(
+      (p) => `
     <tr>
         <td>${p.TipoDocumento || p.tipoDocumento || ""}</td>
         <td>${p.NumeroDocumento || p.numeroDocumento || ""}</td>
-        <td>${(p.ApellidoPaterno || p.apellidoPaterno || "") + " " + (p.ApellidoMaterno || p.apellidoMaterno || "") + ", " + (p.Nombre || p.nombre || "")}</td>
-        <td>${(p.Edad !== undefined ? p.Edad : p.edad !== undefined ? p.edad : "-") + " años"}</td>
-        <td>${(p.Sexo === "M" || p.sexo === "M") ? "Masculino" : (p.Sexo === "F" || p.sexo === "F") ? "Femenino" : ""}</td>
+        <td>${
+          (p.ApellidoPaterno || p.apellidoPaterno || "") +
+          " " +
+          (p.ApellidoMaterno || p.apellidoMaterno || "") +
+          ", " +
+          (p.Nombre || p.nombre || "")
+        }</td>
+        <td>${
+          (p.Edad !== undefined
+            ? p.Edad
+            : p.edad !== undefined
+            ? p.edad
+            : "-") + " años"
+        }</td>
+        <td>${
+          p.Sexo === "M" || p.sexo === "M"
+            ? "Masculino"
+            : p.Sexo === "F" || p.sexo === "F"
+            ? "Femenino"
+            : ""
+        }</td>
         <td>
             <div style="display: flex; gap: 8px;">
                 <button style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 6px; border: none; cursor: pointer; background-color: #007bff; color: white; transition: all 0.2s ease;" 
                         title="Editar Historia Clínica" 
-                        onclick="editarHistoriaClinica(${p.IdPaciente || p.idPaciente})"
+                        onclick="editarHistoriaClinica(${
+                          p.IdPaciente || p.idPaciente
+                        })"
                         onmouseover="this.style.backgroundColor='#0056b3'; this.style.transform='translateY(-2px)';"
                         onmouseout="this.style.backgroundColor='#007bff'; this.style.transform='translateY(0)';">
                     <i class="fas fa-edit" style="margin: 0;"></i>
@@ -166,9 +187,25 @@ function renderPacienteTable(data) {
             </div>
         </td>
     </tr>
-`).join("");
+`
+    )
+    .join("");
 }
+function solicitarCita(idPaciente) {
+  console.log("Solicitar cita para paciente ID:", idPaciente);
 
+  if (idPaciente) {
+    // Redirigir a VisualCitas con el ID del paciente como parámetro
+    const url = `/Home/VisualCitas?idPaciente=${encodeURIComponent(
+      idPaciente
+    )}`;
+    console.log("Redirigiendo a:", url);
+    window.location.href = url;
+  } else {
+    console.error("No se pudo obtener el ID del paciente");
+    alert("Error: No se pudo identificar al paciente");
+  }
+}
 /* // Calcular edad (puedes ajustar según tu modelo)
 function calcularEdad(fechaNacimiento) {
     if (!fechaNacimiento) return "-";
@@ -223,18 +260,6 @@ function showAlert(message, type = "success") {
   setTimeout(() => alert.remove(), 4000);
 }
 
-// Acciones
-// Función para editar Historia Clínica
-function editarHistoriaClinica(id) {
-  showAlert(
-    "Funcionalidad de editar Historia Clinica del paciente aún no implementada.",
-    "info"
-  );
-}
-function solicitarCita(id) {
-  showAlert("Funcionalidad para solicitar cita aún no implementada.", "info");
-}
-
 // Cargar citas pendientes de un paciente
 async function loadCitasPendientes(idPaciente) {
   try {
@@ -255,24 +280,26 @@ async function loadCitasPendientes(idPaciente) {
   }
 }
 
-
 // Renderizar tabla de citas pendientes
 function renderCitasPendientesTable(citas) {
-    const tbody = document.getElementById("citasPendientesBody");
-    if (!tbody) return;
+  const tbody = document.getElementById("citasPendientesBody");
+  if (!tbody) return;
 
-    if (!citas || citas.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="no-data">No hay citas pendientes.</td></tr>`;
-        return;
-    }
+  if (!citas || citas.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="no-data">No hay citas pendientes.</td></tr>`;
+    return;
+  }
 
-    tbody.innerHTML = citas.map(c => {
-        const fechaFormateada = c.fechaCita ? new Date(c.fechaCita).toLocaleDateString('es-PE') : "-";
-        const horaFormateada = c.horaCita || "-";
-        const estado = c.estadoCita || "Sin Estado";
-        const estadoClass = getEstadoClass(estado);
-        
-        return `
+  tbody.innerHTML = citas
+    .map((c) => {
+      const fechaFormateada = c.fechaCita
+        ? new Date(c.fechaCita).toLocaleDateString("es-PE")
+        : "-";
+      const horaFormateada = c.horaCita || "-";
+      const estado = c.estadoCita || "Sin Estado";
+      const estadoClass = getEstadoClass(estado);
+
+      return `
             <tr>
                 <td>${c.tipoDocumento || ""}</td>
                 <td>${c.numeroDocumento || ""}</td>
@@ -283,27 +310,28 @@ function renderCitasPendientesTable(citas) {
                 <td>${c.nombreCompletoMedico || ""}</td>
             </tr>
         `;
-    }).join("");
+    })
+    .join("");
 }
 
 // Obtener clase CSS para el estado
 function getEstadoClass(estado) {
-    if (!estado) return "estado-default";
-    
-    const estadoNormalizado = estado.trim().toLowerCase();
-    
-    switch(estadoNormalizado) {
-        case "confirmada":
-        case "activo":
-            return "estado-activo";
-        case "pendiente":
-            return "estado-pendiente";
-        case "cancelada":
-        case "inactivo":
-            return "estado-inactivo";
-        case "en curso":
-            return "estado-en-curso";
-        default:
-            return "estado-default";
-    }
+  if (!estado) return "estado-default";
+
+  const estadoNormalizado = estado.trim().toLowerCase();
+
+  switch (estadoNormalizado) {
+    case "confirmada":
+    case "activo":
+      return "estado-activo";
+    case "pendiente":
+      return "estado-pendiente";
+    case "cancelada":
+    case "inactivo":
+      return "estado-inactivo";
+    case "en curso":
+      return "estado-en-curso";
+    default:
+      return "estado-default";
+  }
 }

@@ -16,7 +16,7 @@ namespace SGMG.Models
     [ForeignKey(nameof(Medico))]
     public int IdMedico { get; set; }
     [ForeignKey(nameof(Triage))]
-    public int IdTriage { get; set; }
+    public int? IdTriage { get; set; }
     public string Especialidad { get; set; } = "";
     public DateTime FechaCita { get; set; }
     public TimeSpan HoraCita { get; set; }
@@ -27,7 +27,7 @@ namespace SGMG.Models
     // Relaciones
     public Paciente Paciente { get; set; } = null!;
     public Medico Medico { get; set; } = null!;
-    public Triaje Triage { get; set; } = null!;
+    public Triaje? Triage { get; set; } = null!;
     public ICollection<Pago> Pagos { get; set; } = new List<Pago>();
   }
 }

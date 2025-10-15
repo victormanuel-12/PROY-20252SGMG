@@ -328,6 +328,18 @@ namespace SGMG.Controllers
           EstadoCita = "Reservada",
           FechaRegistro = DateTime.Now
         };
+        _logger.LogInformation($"✅ Registro de cita creado en memoria");
+        _logger.LogInformation($"   → Fecha: {nuevaCita.FechaCita:yyyy-MM-dd}");
+        _logger.LogInformation($"   → Hora: {nuevaCita.HoraCita}");
+        _logger.LogInformation($"   → Consultorio: {nuevaCita.Consultorio}");
+        _logger.LogInformation($"   → Estado: {nuevaCita.EstadoCita}");
+        _logger.LogInformation($"   → FechaRegistro: {nuevaCita.FechaRegistro}");
+        _logger.LogInformation($"   → Especialidad: {nuevaCita.Especialidad}");
+        _logger.LogInformation($"   → IdPaciente: {nuevaCita.IdPaciente}");
+        _logger.LogInformation($"   → IdMedico: {nuevaCita.IdMedico}");
+        _logger.LogInformation($"   → Médico: Dr. {medico.Nombre} {medico.ApellidoPaterno}");
+        _logger.LogInformation($"   → Paciente ID: {nuevaCita.IdPaciente}");
+        _logger.LogInformation($"   → Paciente: (ID {nuevaCita.IdPaciente})");
 
         _context.Citas.Add(nuevaCita);
         _logger.LogInformation($"✅ Cita agregada al contexto de EF Core");

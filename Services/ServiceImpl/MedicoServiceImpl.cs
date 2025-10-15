@@ -8,6 +8,7 @@ using SGMG.Dtos.Response;
 using SGMG.Models;
 using SGMG.Repository;
 using SGMG.Services;
+using Microsoft.Extensions.Logging;
 
 
 namespace SGMG.Services.ServiceImpl
@@ -15,12 +16,18 @@ namespace SGMG.Services.ServiceImpl
   public class MedicoServiceImpl : IMedicoService
   {
     private readonly IMedicoRepository _medicoRepository;
+    private readonly IDisponibilidadSemanalRepository _disponibilidadRepository;
+    private readonly ILogger<MedicoServiceImpl> _logger;
 
-    public MedicoServiceImpl(IMedicoRepository medicoRepository)
+    public MedicoServiceImpl(
+        IMedicoRepository medicoRepository,
+        IDisponibilidadSemanalRepository disponibilidadRepository,
+        ILogger<MedicoServiceImpl> logger)
     {
       _medicoRepository = medicoRepository;
+      _disponibilidadRepository = disponibilidadRepository;
+      _logger = logger;
     }
-
     public async Task<GenericResponse<IEnumerable<Medico>>> GetAllMedicosAsync()
     {
       try
@@ -135,6 +142,143 @@ namespace SGMG.Services.ServiceImpl
         throw new GenericException("Error al filtrar los médicos.", ex);
       }
     }
+
+    public async Task<GenericResponse<DisponibilidadSemanaResponse>> GetMedicosDisponiblesPorSemanaAsync(
+           int semana,
+           string? numeroDni,
+           int? idConsultorio,
+           string? estado,
+           string? turno)
+    {
+      try
+      {
+        _logger.LogInformation(
+            "Buscando médicos disponibles para semana {Semana} con filtros: DNI={DNI}, Consultorio={Consultorio}, Estado={Estado}, Turno={Turno}",
+            semana, numeroDni, idConsultorio, estado, turno);
+
+        // Validar que semana esté entre 0 y 4
+        if (semana < 0 || semana > 4)
+        {
+          _logger.LogWarning("Parámetro 'semana' fuera de rango: {Semana}", semana);
+          return new GenericResponse<DisponibilidadSemanaResponse>(
+              false,
+              "El parámetro 'semana' debe estar entre 0 (actual) y 4 (en 4 semanas)."
+          );
+        }
+
+        // Calcular fecha objetivo sumando las semanas
+        DateTime fechaObjetivo = DateTime.Now.AddDays(semana * 7);
+        var (inicioSemana, finSemana) = ObtenerRangoSemana(fechaObjetivo);
+
+        _logger.LogInformation(
+            "Rango de semana calculado: {Inicio} - {Fin}",
+            inicioSemana.ToString("dd/MM/yyyy"),
+            finSemana.ToString("dd/MM/yyyy"));
+
+        // Obtener médicos filtrados por criterios básicos
+        var medicos = await _medicoRepository.GetMedicosFilteredAsync(
+            numeroDni, idConsultorio, estado, null, null, turno);
+
+        if (medicos == null || !medicos.Any())
+        {
+          _logger.LogWarning("No se encontraron médicos con los filtros proporcionados");
+          return new GenericResponse<DisponibilidadSemanaResponse>(
+              false,
+              "No se encontraron médicos con los filtros proporcionados."
+          );
+        }
+
+        _logger.LogInformation("Se encontraron {Count} médicos que cumplen los filtros básicos", medicos.Count());
+
+        // Obtener disponibilidades SOLO de la semana objetivo
+        var disponibilidades = await _disponibilidadRepository.GetDisponibilidadesPorSemanaAsync(
+            inicioSemana, finSemana);
+
+        var disponibilidadesDict = disponibilidades.ToDictionary(d => d.IdMedico);
+        var medicosDisponibles = new List<MedicoDisponibilidadDTO>();
+
+        foreach (var disp in disponibilidades)
+        {
+          var medico = medicos.FirstOrDefault(m => m.IdMedico == disp.IdMedico);
+          if (medico == null)
+            continue; // Por si hay una disponibilidad huérfana sin médico válido
+
+          if (disp.CitasActuales < disp.CitasMaximas)
+          {
+            medicosDisponibles.Add(new MedicoDisponibilidadDTO
+            {
+              IdMedico = medico.IdMedico,
+              NumeroDni = medico.NumeroDni,
+              NombreCompleto = $"{medico.Nombre} {medico.ApellidoPaterno} {medico.ApellidoMaterno}".Trim(),
+              Consultorio = medico.ConsultorioAsignado?.Nombre ?? "Sin consultorio",
+              Turno = medico.Turno,
+              CitasActuales = disp.CitasActuales,
+              CitasMaximas = disp.CitasMaximas,
+              CitasRestantes = disp.CitasMaximas - disp.CitasActuales
+            });
+          }
+        }
+
+
+        // Preparar respuesta
+        var response = new DisponibilidadSemanaResponse
+        {
+          NumeroSemana = semana,
+          FechaInicioSemana = inicioSemana.ToString("yyyy-MM-dd"),
+          FechaFinSemana = finSemana.ToString("yyyy-MM-dd"),
+          PeriodoSemana = $"{inicioSemana:dd/MM/yyyy} - {finSemana:dd/MM/yyyy}",
+          TotalMedicosDisponibles = medicosDisponibles.Count,
+          MedicosDisponibles = medicosDisponibles
+        };
+
+        if (!medicosDisponibles.Any())
+        {
+          _logger.LogWarning(
+              "No hay médicos disponibles para la semana del {Inicio} al {Fin}",
+              inicioSemana.ToString("dd/MM/yyyy"),
+              finSemana.ToString("dd/MM/yyyy"));
+
+          return new GenericResponse<DisponibilidadSemanaResponse>(
+              false,
+              response,
+              $"No hay médicos disponibles para la semana del {inicioSemana:dd/MM/yyyy} al {finSemana:dd/MM/yyyy}. Todas las citas están completas."
+          );
+        }
+
+        string nombreSemana = semana switch
+        {
+          0 => "semana actual",
+          1 => "próxima semana",
+          _ => $"semana en {semana} semanas"
+        };
+
+        _logger.LogInformation(
+            "Se encontraron {Count} médico(s) disponible(s) para la {NombreSemana}",
+            medicosDisponibles.Count,
+            nombreSemana);
+
+        return new GenericResponse<DisponibilidadSemanaResponse>(
+            true,
+            response,
+            $"Se encontraron {medicosDisponibles.Count} médico(s) disponible(s) para la {nombreSemana} ({inicioSemana:dd/MM/yyyy} - {finSemana:dd/MM/yyyy})."
+        );
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error al obtener médicos disponibles por semana {Semana}", semana);
+        throw new GenericException("Error al obtener médicos disponibles por semana.", ex);
+      }
+    }
+
+    // Métodos auxiliares privados
+    private (DateTime inicioSemana, DateTime finSemana) ObtenerRangoSemana(DateTime fecha)
+    {
+      int diasHastaLunes = ((int)fecha.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+      DateTime inicioSemana = fecha.Date.AddDays(-diasHastaLunes);
+      DateTime finSemana = inicioSemana.AddDays(6);
+      return (inicioSemana, finSemana);
+    }
+
 
     private void MapToMedico(MedicoRequestDTO dto, Medico medico)
     {

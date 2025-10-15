@@ -26,8 +26,9 @@ public class HomeController : Controller
   {
     return View();
   }
-  public IActionResult VisualCitas()
+  public IActionResult VisualCitas(int? idPaciente)
   {
+    ViewBag.IdPaciente = idPaciente;
     return View();
   }
 
@@ -39,6 +40,20 @@ public class HomeController : Controller
   {
     return View();
   }
+  public IActionResult HorarioMedico(int? idMedico, int? idPaciente, int? semana)
+  {
+    if (idMedico == null || idMedico == 0)
+    {
+      return RedirectToAction("VisualCitas");
+    }
+    ViewBag.Semana = semana ?? 0;
+    ViewBag.IdMedico = idMedico;
+    ViewBag.IdPaciente = idPaciente;
+    ViewData["Title"] = $"Horario del Médico - ID: {idMedico}";
+
+    return View();
+  }
+
 
   [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
   public IActionResult Error()
