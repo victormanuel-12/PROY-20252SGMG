@@ -7,6 +7,8 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SGMG.Dtos.Request;
+using SGMG.Dtos.Response;
+using SGMG.Services;
 
 namespace SGMG.Controllers
 {
@@ -14,13 +16,52 @@ namespace SGMG.Controllers
   {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<CitaController> _logger;
+    private readonly ICitaService _citaService;
 
-    public CitaController(ApplicationDbContext context, ILogger<CitaController> logger)
+    public CitaController(ApplicationDbContext context, ILogger<CitaController> logger, ICitaService citaService)
     {
       _context = context;
       _logger = logger;
+      _citaService = citaService;
     }
 
+    [HttpGet]
+    public IActionResult Index()
+    {
+      return View();
+    }
+        
+    [HttpGet]
+    [Route("/citas/pendientes")]
+    public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> GetCitasPendientes()
+    {
+      return await _citaService.GetCitasPendientesAsync();
+    }
+        
+    [HttpGet]
+    [Route("/citas/fuera-horario")]
+    public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> GetCitasFueraHorario()
+    {
+      return await _citaService.GetCitasFueraHorarioAsync();
+    }
+        
+
+    [HttpGet]
+    [Route("/citas/all")]
+    public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> GetAllCitas()
+    {
+      return await _citaService.GetAllCitasAsync();
+    }
+        
+
+    [HttpGet]
+    [Route("/citas/{id}")]
+    public async Task<GenericResponse<CitaResponseDTO>> GetCitaById(int id)
+    {
+      return await _citaService.GetCitaByIdAsync(id);
+    }
+
+    //MEDICO Y PACIENTE - VISTA HORARIO Y RESERVA CITA
     public IActionResult HorarioMedico(int? idMedico, int? idPaciente, int? semana)
     {
       if (idMedico == null || idMedico == 0)
