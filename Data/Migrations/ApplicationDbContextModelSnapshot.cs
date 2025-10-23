@@ -156,11 +156,9 @@ namespace SGMG.Data.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ProviderKey")
-                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ProviderDisplayName")
@@ -198,11 +196,9 @@ namespace SGMG.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("LoginProvider")
-                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
-                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Value")
@@ -289,6 +285,51 @@ namespace SGMG.Data.Migrations
                     b.HasKey("IdConsultorio");
 
                     b.ToTable("Consultorios");
+                });
+
+            modelBuilder.Entity("SGMG.Models.DetalleReceta", b =>
+                {
+                    b.Property<int>("IdDetalle")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Concentracion")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Duracion")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Frecuencia")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("IdReceta")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observaciones")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProductoFarmaceutico")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ViaAdministracion")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("IdDetalle");
+
+                    b.HasIndex("IdReceta");
+
+                    b.ToTable("DetallesRecetas");
                 });
 
             modelBuilder.Entity("SGMG.Models.DisponibilidadMedico", b =>
@@ -678,6 +719,48 @@ namespace SGMG.Data.Migrations
                     b.ToTable("PersonalTecnicos");
                 });
 
+            modelBuilder.Entity("SGMG.Models.Receta", b =>
+                {
+                    b.Property<int>("IdReceta")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("EstadoReceta")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FechaEmision")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("IdCita")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("IdHistoriaClinica")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("IdMedico")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("IdPaciente")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ObservacionesGenerales")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("IdReceta");
+
+                    b.HasIndex("IdCita");
+
+                    b.HasIndex("IdHistoriaClinica");
+
+                    b.HasIndex("IdMedico");
+
+                    b.HasIndex("IdPaciente");
+
+                    b.ToTable("Recetas");
+                });
+
             modelBuilder.Entity("SGMG.Models.Triaje", b =>
                 {
                     b.Property<int>("IdTriage")
@@ -822,6 +905,17 @@ namespace SGMG.Data.Migrations
                     b.Navigation("Triage");
                 });
 
+            modelBuilder.Entity("SGMG.Models.DetalleReceta", b =>
+                {
+                    b.HasOne("SGMG.Models.Receta", "Receta")
+                        .WithMany("Detalles")
+                        .HasForeignKey("IdReceta")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Receta");
+                });
+
             modelBuilder.Entity("SGMG.Models.DisponibilidadMedico", b =>
                 {
                     b.HasOne("SGMG.Models.Medico", "Medico")
@@ -903,6 +997,39 @@ namespace SGMG.Data.Migrations
                     b.Navigation("Cita");
                 });
 
+            modelBuilder.Entity("SGMG.Models.Receta", b =>
+                {
+                    b.HasOne("SGMG.Models.Cita", "Cita")
+                        .WithMany()
+                        .HasForeignKey("IdCita")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SGMG.Models.HistoriaClinica", "HistoriaClinica")
+                        .WithMany()
+                        .HasForeignKey("IdHistoriaClinica");
+
+                    b.HasOne("SGMG.Models.Medico", "Medico")
+                        .WithMany()
+                        .HasForeignKey("IdMedico")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SGMG.Models.Paciente", "Paciente")
+                        .WithMany()
+                        .HasForeignKey("IdPaciente")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cita");
+
+                    b.Navigation("HistoriaClinica");
+
+                    b.Navigation("Medico");
+
+                    b.Navigation("Paciente");
+                });
+
             modelBuilder.Entity("SGMG.Models.Triaje", b =>
                 {
                     b.HasOne("SGMG.Models.Paciente", "Paciente")
@@ -935,6 +1062,11 @@ namespace SGMG.Data.Migrations
                     b.Navigation("HistoriasClinicas");
 
                     b.Navigation("Triages");
+                });
+
+            modelBuilder.Entity("SGMG.Models.Receta", b =>
+                {
+                    b.Navigation("Detalles");
                 });
 #pragma warning restore 612, 618
         }
