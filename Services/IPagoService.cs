@@ -10,5 +10,7 @@ namespace SGMG.Services
 
         // Nuevo: devolver DTOs listos para el controller o para serializar
         IEnumerable<SGMG.Dtos.Response.PagoResponseDTO> GetHistorialPagosDto(string tipoDocumento, string numeroDocumento, DateTime? fechaInicio, DateTime? fechaFin, string estado);
+        SGMG.Dtos.Response.PagoResponseDTO? GetPagoByIdDto(int id);
+        bool Pagar(int id);
     }
 }
