@@ -23,15 +23,16 @@ namespace SGMG.Areas.Identity.Pages.Account
       _logger = logger;
     }
 
-    public async Task<IActionResult> OnPost(string returnUrl = null)
+    public async Task<IActionResult> OnPost()
     {
-      // 🔹 Cierra la sesión actual
+      _logger.LogInformation("Inicio cierre de sesión");
       await _signInManager.SignOutAsync();
       _logger.LogInformation("User logged out.");
 
-      // 🔹 Redirige siempre al login después del logout
-      return LocalRedirect("/Identity/Account/Login");
+      return Redirect("/Home/Index"); // Redirige a la ruta absoluta
     }
+
+
 
 
   }
