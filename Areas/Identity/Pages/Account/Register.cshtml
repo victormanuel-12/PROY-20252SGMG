@@ -18,6 +18,12 @@
             <h1>Asignar Credenciales</h1>
             <p>Crear una nueva cuenta de acceso al sistema</p>
         </div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success-custom" role="alert">
+        <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+    </div>
+}
 
         <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger-custom" role="alert"></div>

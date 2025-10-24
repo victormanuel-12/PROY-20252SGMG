@@ -267,35 +267,32 @@ namespace SGMG.Areas.Identity.Pages.Account
             _logger.LogInformation("Usuario creado exitosamente: {Email} con IdUsuario: {IdUsuario}",
                 user.Email, user.IdUsuario);
 
-            // Asignar rol según el GUID seleccionado
             var roleName = RolesList.FirstOrDefault(r => r.Value == Input.RoleId)?.Text;
 
             if (!string.IsNullOrEmpty(roleName))
             {
-              // Verificar si el rol existe, si no, crearlo
               if (!await _roleManager.RoleExistsAsync(roleName))
               {
                 await _roleManager.CreateAsync(new IdentityRole(roleName));
-                _logger.LogInformation("Rol creado: {RoleName}", roleName);
               }
 
               await _userManager.AddToRoleAsync(user, roleName);
-              _logger.LogInformation("Rol {RoleName} asignado al usuario {Email}", roleName, user.Email);
             }
 
-            // Iniciar sesión inmediatamente
-            await _signInManager.SignInAsync(user, isPersistent: false);
+            // ✅ Mensaje de éxito persistente
+            TempData["SuccessMessage"] = "Usuario registrado exitosamente.";
 
             // Redirigir según el rol asignado
             return roleName switch
             {
-              "ADMINISTRADOR" => LocalRedirect("Identity/Account/Register"),
-              "MEDICO" => LocalRedirect("Identity/Account/Register"),
-              "ENFERMERIA" => LocalRedirect("Identity/Account/Register"),
-              "CAJERO" => LocalRedirect("Identity/Account/Register"),
+              "ADMINISTRADOR" => RedirectToPage("/Account/Register", new { area = "Identity" }),
+              "MEDICO" => RedirectToPage("/Account/Register", new { area = "Identity" }),
+              "ENFERMERIA" => RedirectToPage("/Account/Register", new { area = "Identity" }),
+              "CAJERO" => RedirectToPage("/Account/Register", new { area = "Identity" }),
               _ => LocalRedirect(returnUrl)
             };
           }
+
 
           // Mostrar errores si falla la creación
           foreach (var error in result.Errors)
