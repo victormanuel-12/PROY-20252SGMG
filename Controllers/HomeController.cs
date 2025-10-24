@@ -15,8 +15,9 @@ public class HomeController : Controller
 
   public IActionResult Index()
   {
-    return View();
+    return Redirect("/Identity/Account/Login");
   }
+
   public IActionResult Personal()
   {
     return View();

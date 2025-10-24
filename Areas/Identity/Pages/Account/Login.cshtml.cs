@@ -14,15 +14,17 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using PROY_20252SGMG.Models;
 
 namespace SGMG.Areas.Identity.Pages.Account
 {
   public class LoginModel : PageModel
   {
-    private readonly SignInManager<IdentityUser> _signInManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
+
     private readonly ILogger<LoginModel> _logger;
 
-    public LoginModel(SignInManager<IdentityUser> signInManager, ILogger<LoginModel> logger)
+    public LoginModel(SignInManager<ApplicationUser> signInManager, ILogger<LoginModel> logger)
     {
       _signInManager = signInManager;
       _logger = logger;
@@ -124,7 +126,7 @@ namespace SGMG.Areas.Identity.Pages.Account
 
             // Redirigir según el rol (puedes ajustar los nombres)
             if (roles.Contains("ADMINISTRADOR"))
-              return LocalRedirect("/Admin/Dashboard");
+              return LocalRedirect("/Home/Personal");
             else if (roles.Contains("MEDICO"))
               return LocalRedirect("/Medico/Home");
             else if (roles.Contains("ENFERMERIA"))

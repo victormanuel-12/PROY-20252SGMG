@@ -9,6 +9,7 @@ using SGMG.common.exception;
 using SGMG.common.middleware;
 using PROY_20252SGMG.Repository;
 using PROY_20252SGMG.Services;
+using PROY_20252SGMG.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +19,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
   options.SignIn.RequireConfirmedAccount = true;
 })

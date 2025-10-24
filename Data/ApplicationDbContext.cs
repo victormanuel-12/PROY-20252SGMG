@@ -1,15 +1,15 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SGMG.Models;
+using PROY_20252SGMG.Models;
 
 namespace SGMG.Data;
 
-public class ApplicationDbContext : IdentityDbContext
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
   public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
       : base(options)
   {
-
   }
   public DbSet<Paciente> Pacientes { get; set; }
   public DbSet<HistoriaClinica> HistoriasClinicas { get; set; }
