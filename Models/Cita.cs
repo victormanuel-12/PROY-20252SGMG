@@ -29,5 +29,6 @@ namespace SGMG.Models
     public Medico Medico { get; set; } = null!;
     public Triaje? Triage { get; set; } = null!;
     public ICollection<Pago> Pagos { get; set; } = new List<Pago>();
+    public ICollection<Diagnostico> Diagnosticos { get; set; } = new List<Diagnostico>(); //NUEVO
   }
 }

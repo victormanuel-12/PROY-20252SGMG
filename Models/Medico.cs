@@ -35,5 +35,6 @@ namespace SGMG.Models
     // Relaciones
     public ICollection<Cita> Citas { get; set; } = new List<Cita>();
     public ICollection<DisponibilidadMedico> Disponibilidades { get; set; } = new List<DisponibilidadMedico>();
+    public ICollection<Diagnostico> Diagnosticos { get; set; } = new List<Diagnostico>(); //NUEVO
   }
 }

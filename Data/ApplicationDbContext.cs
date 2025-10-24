@@ -26,4 +26,5 @@ public class ApplicationDbContext : IdentityDbContext
   public DbSet<DisponibilidadSemanal> DisponibilidadesSemanales { get; set; }
   public DbSet<Receta> Recetas { get; set; }
   public DbSet<DetalleReceta> DetallesRecetas { get; set; }
+  public DbSet<Diagnostico> Diagnosticos { get; set; }
 }

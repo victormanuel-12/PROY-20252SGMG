@@ -6,6 +6,9 @@ using SGMG.Dtos.Request.HistoriaClinica;
 using SGMG.Dtos.Request.Paciente;
 using SGMG.Dtos.Request.DomicilioPaciente;
 using SGMG.Repository;
+using SGMG.Services;
+using SGMG.Dtos.Response;
+
 
 namespace SGMG.Controllers
 {
@@ -14,16 +17,44 @@ namespace SGMG.Controllers
         private readonly IPacienteRepository _pacienteRepository;
         private readonly IHistoriaClinicaRepository _historiaClinicaRepository;
         private readonly IDomicilioPacienteRepository _domicilioPacienteRepository;
+        private readonly IHistorialClinicoService _historialService;
 
         public HistoriaClinicaController(
             IPacienteRepository pacienteRepository,
             IHistoriaClinicaRepository historiaClinicaRepository,
-            IDomicilioPacienteRepository domicilioPacienteRepository)
+            IDomicilioPacienteRepository domicilioPacienteRepository,
+            IHistorialClinicoService historialService)
         {
             _pacienteRepository = pacienteRepository;
             _historiaClinicaRepository = historiaClinicaRepository;
             _domicilioPacienteRepository = domicilioPacienteRepository;
+            _historialService = historialService;
         }
+
+        //NUEVOS ENDPOINTS
+
+        [HttpGet]
+        [Route("/historia-clinica/ver")]
+        public IActionResult Ver()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        [Route("/api/historia-clinica/paciente/{idPaciente}")]
+        public async Task<GenericResponse<HistorialClinicoDTO>> GetHistorialPaciente(int idPaciente)
+        {
+            return await _historialService.GetHistorialByPacienteAsync(idPaciente);
+        }
+
+        [HttpGet]
+        [Route("/api/historia-clinica/diagnostico/{idDiagnostico}")]
+        public async Task<GenericResponse<DiagnosticoResponseDTO>> GetDiagnosticoDetalle(int idDiagnostico)
+        {
+            return await _historialService.GetDiagnosticoDetalleAsync(idDiagnostico);
+        }
+
+
 
         [HttpGet]
         public IActionResult Create()
