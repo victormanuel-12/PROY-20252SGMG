@@ -25,5 +25,6 @@ namespace SGMG.Models
     public ICollection<Triaje> Triages { get; set; } = new List<Triaje>();
     public ICollection<Cita> Citas { get; set; } = new List<Cita>();
     public ICollection<DomicilioPaciente> Domicilios { get; set; } = new List<DomicilioPaciente>();
+    public ICollection<Diagnostico> Diagnosticos { get; set; } = new List<Diagnostico>(); //NUEVO
   }
 }

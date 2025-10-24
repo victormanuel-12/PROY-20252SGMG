@@ -62,6 +62,7 @@ builder.Services.AddScoped<IPagoRepository, PagoRepository>();
 builder.Services.AddScoped<IDisponibilidadSemanalRepository, DisponibilidadSemanalRepositoryImpl>();
 builder.Services.AddScoped<ITriajeRepository, TriajeRepositoryImpl>();
 builder.Services.AddScoped<ICitaRepository, CitaRepositoryImpl>();
+builder.Services.AddScoped<IDiagnosticoRepository, DiagnosticoRepositoryImpl>();
 
 // Registro de servicios (Inyección de dependencias)
 builder.Services.AddScoped<IPacienteService, PacienteService>();
@@ -72,6 +73,7 @@ builder.Services.AddScoped<IPersonalTservice, PersonalTServiceImpl>();
 builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddScoped<ITriajeService, TriajeService>();
 builder.Services.AddScoped<ICitaService, CitaService>();
+builder.Services.AddScoped<IHistorialClinicoService, HistorialClinicoService>();
 builder.Services.AddScoped<GlobalExceptionFilter>();
 builder.Services.AddScoped<ValidationFilter>();
 var app = builder.Build();
