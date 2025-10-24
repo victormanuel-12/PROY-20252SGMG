@@ -41,6 +41,30 @@ namespace SGMG.Repository.RepositoryImpl
                 .OrderByDescending(p => p.FechaPago)
                 .ToList();
         }
+
+        public Pago? GetPagoById(int id)
+        {
+            return _context.Pagos
+                .Include(p => p.Cita)
+                    .ThenInclude(c => c.Paciente)
+                        .ThenInclude(pa => pa.HistoriasClinicas)
+                .Include(p => p.Cita)
+                    .ThenInclude(c => c.Medico)
+                .AsQueryable()
+                .FirstOrDefault(p => p.IdPago == id);
+        }
+
+        public bool UpdatePagoStatus(int id, string estado, DateTime? fechaPago = null)
+        {
+            var pago = _context.Pagos.FirstOrDefault(p => p.IdPago == id);
+            if (pago == null) return false;
+            pago.EstadoPago = estado ?? pago.EstadoPago;
+            if (fechaPago.HasValue)
+                pago.FechaPago = fechaPago.Value;
+            _context.Pagos.Update(pago);
+            _context.SaveChanges();
+            return true;
+        }
     }
 }
 

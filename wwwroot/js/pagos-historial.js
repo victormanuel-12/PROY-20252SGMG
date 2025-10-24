@@ -25,8 +25,12 @@
             <td>${pago.estado || "-"}</td>
             <td>${
               pago.estado === "Pendiente"
-                ? '<a href="#" class="btn btn-primary btn-sm">Pagar cita</a>'
-                : '<a href="#" class="btn btn-info btn-sm">Detalles</a>'
+                ? `<a href="/pagos/resumen/${encodeURIComponent(
+                    pago.id
+                  )}" class="btn btn-primary btn-sm">Pagar cita</a>`
+                : `<a href="/pagos/resumen/${encodeURIComponent(
+                    pago.id
+                  )}" class="btn btn-info btn-sm">Detalles</a>`
             }</td>
         `;
     return tr;
