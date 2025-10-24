@@ -46,7 +46,7 @@ namespace SGMG.Services.ServiceImpl
             try
             {
                 Console.WriteLine($"Actualizando cita del paciente: {idPaciente}");
-                
+
                 // Traer todas las citas confirmadas del paciente
                 var citas = await _context.Citas
                     .Where(c => c.IdPaciente == idPaciente && c.EstadoCita == "Confirmada")
@@ -61,12 +61,12 @@ namespace SGMG.Services.ServiceImpl
                 if (cita != null)
                 {
                     Console.WriteLine($"Cita encontrada ID: {cita.IdCita}, Estado: {cita.EstadoCita}");
-                    
+
                     cita.EstadoCita = "Triada";
                     _context.Entry(cita).Property(c => c.EstadoCita).IsModified = true;
-                    
+
                     await _context.SaveChangesAsync();
-                    
+
                     Console.WriteLine($"Cita ID {cita.IdCita} actualizada a: Triada");
                 }
                 else
@@ -329,5 +329,131 @@ namespace SGMG.Services.ServiceImpl
 
             return triaje;
         }
+
+        public async Task<GenericResponse<IEnumerable<TriajeResponseDTO>>> BuscarTriajesAsync(string? tipoDoc, string? numeroDoc, DateTime? fechaInicio, DateTime? fechaFin)
+        {
+            try
+            {
+                Console.WriteLine($"Buscando triajes: TipoDoc={tipoDoc}, NumDoc={numeroDoc}, FechaInicio={fechaInicio}, FechaFin={fechaFin}");
+
+                // Construir query base
+                var query = _context.Triages
+                    .Include(t => t.Paciente)
+                    .AsQueryable();
+
+                // Filtrar por documento si se proporcionó
+                if (!string.IsNullOrWhiteSpace(tipoDoc) && !string.IsNullOrWhiteSpace(numeroDoc))
+                {
+                    query = query.Where(t =>
+                        t.Paciente.TipoDocumento == tipoDoc &&
+                        t.Paciente.NumeroDocumento == numeroDoc);
+                }
+
+                // Filtrar por rango de fechas
+                if (fechaInicio.HasValue)
+                {
+                    query = query.Where(t => t.FechaTriage >= fechaInicio.Value.Date);
+                }
+
+                if (fechaFin.HasValue)
+                {
+                    var fechaFinInclusiva = fechaFin.Value.Date.AddDays(1);
+                    query = query.Where(t => t.FechaTriage < fechaFinInclusiva);
+                }
+
+                var triajes = await query.ToListAsync();
+
+                if (!triajes.Any())
+                {
+                    return new GenericResponse<IEnumerable<TriajeResponseDTO>>(
+                        true,
+                        new List<TriajeResponseDTO>(),
+                        "No se encontraron triajes con los criterios especificados");
+                }
+
+                // Ordenar en memoria
+                triajes = triajes
+                    .OrderByDescending(t => t.FechaTriage)
+                    .ThenByDescending(t => t.HoraTriage)
+                    .ToList();
+
+                // Obtener IDs de pacientes
+                var idsPacientes = triajes.Select(t => t.IdPaciente).Distinct().ToList();
+
+                // Traer citas triadas
+                var citasTriadas = await _context.Citas
+                    .Include(c => c.Medico)
+                    .Where(c => idsPacientes.Contains(c.IdPaciente) && c.EstadoCita == "Triada")
+                    .ToListAsync();
+
+                var citasPorPaciente = citasTriadas
+                    .GroupBy(c => c.IdPaciente)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.OrderByDescending(c => c.FechaCita)
+                               .ThenByDescending(c => c.HoraCita)
+                               .First()
+                    );
+
+                // Mapear a DTO
+                var triajesDTO = triajes.Select(t =>
+                {
+                    citasPorPaciente.TryGetValue(t.IdPaciente, out var cita);
+
+                    return new TriajeResponseDTO
+                    {
+                        IdTriaje = t.IdTriage,
+                        Temperatura = t.Temperatura,
+                        PresionArterial = t.PresionArterial,
+                        Saturacion = t.Saturacion,
+                        FrecuenciaCardiaca = t.FrecuenciaCardiaca,
+                        FrecuenciaRespiratoria = t.FrecuenciaRespiratoria,
+                        Peso = t.Peso,
+                        Talla = t.Talla,
+                        PerimetroAbdominal = t.PerimetroAbdominal,
+                        SuperficieCorporal = t.SuperficieCorporal,
+                        Imc = t.Imc,
+                        ClasificacionImc = t.ClasificacionImc,
+                        RiesgoEnfermedad = t.RiesgoEnfermedad,
+                        EstadoTriage = t.EstadoTriage,
+                        FechaTriage = t.FechaTriage,
+                        HoraTriage = t.HoraTriage,
+                        Observaciones = t.Observaciones,
+
+                        IdPaciente = t.IdPaciente,
+                        NumeroDocumento = t.Paciente?.NumeroDocumento ?? "",
+                        TipoDocumento = t.Paciente?.TipoDocumento ?? "",
+                        Nombre = t.Paciente?.Nombre ?? "",
+                        ApellidoPaterno = t.Paciente?.ApellidoPaterno ?? "",
+                        ApellidoMaterno = t.Paciente?.ApellidoMaterno ?? "",
+                        Sexo = t.Paciente?.Sexo ?? "",
+                        Edad = t.Paciente?.Edad ?? 0,
+                        NombreCompletoPaciente = t.Paciente != null
+                            ? $"{t.Paciente.ApellidoPaterno} {t.Paciente.ApellidoMaterno} {t.Paciente.Nombre}".Trim()
+                            : "",
+
+                        Consultorio = cita?.Consultorio ?? "N/A",
+                        HoraCita = cita?.HoraCita.ToString(@"hh\:mm") ?? "00:00",
+                        FechaCita = cita?.FechaCita,
+                        NombreCompletoMedico = cita?.Medico != null
+                            ? $"{cita.Medico.ApellidoPaterno} {cita.Medico.ApellidoMaterno} {cita.Medico.Nombre}".Trim()
+                            : "N/A"
+                    };
+                }).ToList();
+
+                Console.WriteLine($"Triajes encontrados: {triajesDTO.Count}");
+
+                return new GenericResponse<IEnumerable<TriajeResponseDTO>>(
+                    true,
+                    triajesDTO,
+                    $"Se encontraron {triajesDTO.Count} triajes");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en BuscarTriajesAsync: {ex.Message}");
+                return new GenericResponse<IEnumerable<TriajeResponseDTO>>(false, $"Error: {ex.Message}");
+            }
+        }
     }
 }
+

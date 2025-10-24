@@ -30,21 +30,38 @@ namespace SGMG.Controllers
     {
       return View();
     }
-        
+
+
+    //Obtener todas las citas pendientes (sin filtros)
     [HttpGet]
     [Route("/citas/pendientes")]
     public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> GetCitasPendientes()
     {
       return await _citaService.GetCitasPendientesAsync();
     }
-        
+
+    //Obtener citas fuera de horario (sin filtros)
     [HttpGet]
     [Route("/citas/fuera-horario")]
     public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> GetCitasFueraHorario()
     {
       return await _citaService.GetCitasFueraHorarioAsync();
     }
-        
+    
+    //Buscar citas pendientes con filtros   
+    [HttpGet]
+    [Route("/citas/buscar-pendientes")]
+    public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> BuscarCitasPendientes([FromQuery] string? tipoDoc,[FromQuery] string? numeroDoc)
+    {
+      return await _citaService.BuscarCitasPendientesAsync(tipoDoc, numeroDoc);
+    }
+
+    [HttpGet]
+    [Route("/citas/buscar-fuera-horario")]
+    public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> BuscarCitasFueraHorario([FromQuery] string? tipoDoc,[FromQuery] string? numeroDoc)
+    {
+      return await _citaService.BuscarCitasFueraHorarioAsync(tipoDoc, numeroDoc);
+    }     
 
     [HttpGet]
     [Route("/citas/all")]
