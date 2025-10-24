@@ -73,6 +73,7 @@ builder.Services.AddScoped<ICitaRepository, CitaRepositoryImpl>();
 builder.Services.AddScoped<IDiagnosticoRepository, DiagnosticoRepositoryImpl>();
 
 
+builder.Services.AddScoped<IRecetaRepository, RecetaRepositoryImpl>();
 // Registro de servicios (Inyección de dependencias)
 builder.Services.AddScoped<IPacienteService, PacienteService>();
 builder.Services.AddScoped<IMedicoService, MedicoServiceImpl>();
