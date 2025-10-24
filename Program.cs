@@ -64,15 +64,14 @@ builder.Services.AddScoped<IPagoRepository, PagoRepository>();
 builder.Services.AddScoped<IDisponibilidadSemanalRepository, DisponibilidadSemanalRepositoryImpl>();
 builder.Services.AddScoped<ITriajeRepository, TriajeRepositoryImpl>();
 builder.Services.AddScoped<ICitaRepository, CitaRepositoryImpl>();
-<<<<<<< HEAD
-builder.Services.AddScoped<IRecetaRepository, RecetaRepositoryImpl>();
-
-// Servicios
 
 
-=======
+
+
+
+
 builder.Services.AddScoped<IDiagnosticoRepository, DiagnosticoRepositoryImpl>();
->>>>>>> ca6553bede54536d553d8d9f74b140adb8c990b9
+
 
 // Registro de servicios (Inyección de dependencias)
 builder.Services.AddScoped<IPacienteService, PacienteService>();
