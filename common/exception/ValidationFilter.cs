@@ -6,40 +6,56 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Logging;
 using SGMG.Dtos.Response;
 
 namespace SGMG.common.exception
 {
   public class ValidationFilter : IActionFilter
   {
+    private readonly ILogger<ValidationFilter> _logger;
+
+    public ValidationFilter(ILogger<ValidationFilter> logger)
+    {
+      _logger = logger;
+    }
+
     public void OnActionExecuting(ActionExecutingContext context)
     {
+      var cad = context.ActionDescriptor as ControllerActionDescriptor;
 
-      //Si la acción o el controlador tiene el atributo [NoValidation], no ejecutar este filtro
-        var cad = context.ActionDescriptor as ControllerActionDescriptor;
       if (cad != null)
       {
+        _logger.LogInformation("🔍 Ejecutando ValidationFilter para {Controller}.{Action}",
+            cad.ControllerName, cad.ActionName);
+
         var hasNoValidationOnMethod = cad.MethodInfo.GetCustomAttributes(typeof(NoValidationAttribute), true).Any();
         var hasNoValidationOnController = cad.ControllerTypeInfo.GetCustomAttributes(typeof(NoValidationAttribute), true).Any();
+
         if (hasNoValidationOnMethod || hasNoValidationOnController)
         {
+          _logger.LogInformation("⏭️ Validación omitida para {Controller}.{Action} por atributo [NoValidation].",
+              cad.ControllerName, cad.ActionName);
           return;
         }
-      
-      // No validar en peticiones de solo lectura (GET, HEAD) para evitar errores de binding en query params
-        var method = context.HttpContext.Request.Method;
-      if (string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase) || string.Equals(method, "HEAD", StringComparison.OrdinalIgnoreCase))
+      }
+
+      var method = context.HttpContext.Request.Method;
+      if (string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase) ||
+          string.Equals(method, "HEAD", StringComparison.OrdinalIgnoreCase))
       {
+        _logger.LogDebug("🚫 No se aplica validación en peticiones {Method}.", method);
         return;
       }
 
       if (!context.ModelState.IsValid)
       {
+        _logger.LogWarning("⚠️ Errores de validación detectados en {Controller}.{Action}.", cad?.ControllerName, cad?.ActionName);
+
         var errors = new List<object>();
 
         foreach (var entry in context.ModelState)
         {
-          // Excluir errores del objeto raíz completo
           if (IsRootObjectError(entry.Key))
             continue;
 
@@ -67,6 +83,8 @@ namespace SGMG.common.exception
           }
         }
 
+        _logger.LogInformation("📦 Campos con errores: {ErrorsJson}", JsonSerializer.Serialize(errors));
+
         var response = new GenericResponse<object>
         {
           Success = false,
@@ -74,79 +92,66 @@ namespace SGMG.common.exception
           Data = errors
         };
 
-          context.Result = new BadRequestObjectResult(response);
-        }
+        context.Result = new BadRequestObjectResult(response);
+
+        _logger.LogWarning("🚫 Petición detenida por errores de validación. Se devuelve HTTP 400.");
+      }
+      else
+      {
+        _logger.LogInformation("✅ Validación completada sin errores.");
       }
     }
 
     public void OnActionExecuted(ActionExecutedContext context)
     {
-      // No se necesita implementar
+      // Log final opcional
+      _logger.LogDebug("🏁 Finalizó la ejecución del filtro de validación para la acción.");
     }
 
-    /// <summary>
-    /// Verifica si es un error del objeto raíz (como "enfermeriaRequestDTO")
-    /// </summary>
     private bool IsRootObjectError(string fieldName)
     {
-      // Excluir solo si es exactamente el nombre del parámetro sin propiedades anidadas
-      // y no empieza con $ (que indica propiedades JSON)
       return !fieldName.Contains(".") && !fieldName.StartsWith("$") &&
              (fieldName.EndsWith("DTO") || fieldName.EndsWith("Request") ||
               fieldName.EndsWith("RequestDTO") || char.IsLower(fieldName[0]));
     }
 
-    /// <summary>
-    /// Limpia el nombre del campo para que sea más legible
-    /// </summary>
     private string CleanFieldName(string fieldName)
     {
-      // Remover el prefijo "$." si existe
       if (fieldName.StartsWith("$."))
       {
         fieldName = fieldName.Substring(2);
       }
 
-      // Si tiene el prefijo del DTO, removerlo (ejemplo: "enfermeriaRequestDTO.nombre" -> "nombre")
       if (fieldName.Contains("."))
       {
         var parts = fieldName.Split('.');
-        // Tomar el último segmento (el nombre real del campo)
         fieldName = parts[parts.Length - 1];
       }
 
       return fieldName;
     }
 
-    /// <summary>
-    /// Obtiene un mensaje de error amigable
-    /// </summary>
     private string GetFriendlyErrorMessage(ModelError error, string fieldName)
     {
       var cleanFieldName = CleanFieldName(fieldName);
 
-      // Manejar errores de DataAnnotations personalizados primero
       if (!string.IsNullOrEmpty(error.ErrorMessage))
       {
-        // Si el mensaje NO contiene indicadores técnicos, es un mensaje personalizado
         if (!error.ErrorMessage.Contains("could not be converted") &&
             !error.ErrorMessage.Contains("JSON value") &&
             !error.ErrorMessage.Contains("Path:") &&
             !error.ErrorMessage.Contains("LineNumber:") &&
             !error.ErrorMessage.Contains("BytePositionInLine:"))
         {
-          // Si es el mensaje genérico de "required", personalizarlo
           if (error.ErrorMessage.Contains("field is required") ||
               error.ErrorMessage.Contains("is required"))
           {
             return $"El campo '{cleanFieldName}' es obligatorio.";
           }
 
-          // Es un mensaje personalizado de DataAnnotations, retornarlo
           return error.ErrorMessage;
         }
 
-        // Es un error técnico, procesarlo
         if (error.ErrorMessage.Contains("could not be converted") ||
             error.ErrorMessage.Contains("JSON value"))
         {
@@ -154,19 +159,15 @@ namespace SGMG.common.exception
         }
       }
 
-      // Si hay una excepción (errores de binding/conversión)
       if (error.Exception != null)
       {
+        _logger.LogError(error.Exception, "❌ Excepción durante la validación del campo {Field}.", cleanFieldName);
         return GetTypeConversionError(error.Exception, cleanFieldName);
       }
 
-      // Fallback genérico
       return $"El campo '{cleanFieldName}' no es válido.";
     }
 
-    /// <summary>
-    /// Obtiene el mensaje de error para conversiones de tipo desde excepciones
-    /// </summary>
     private string GetTypeConversionError(Exception exception, string fieldName)
     {
       var exceptionMessage = exception.Message.ToLower();
@@ -200,9 +201,6 @@ namespace SGMG.common.exception
       return $"El campo '{fieldName}' tiene un formato incorrecto.";
     }
 
-    /// <summary>
-    /// Analiza errores de conversión JSON para obtener mensajes amigables
-    /// </summary>
     private string ParseJsonConversionError(string errorMessage, string fieldName)
     {
       var lowerMessage = errorMessage.ToLower();

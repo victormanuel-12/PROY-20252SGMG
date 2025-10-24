@@ -1,18 +1,13 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SGMG.Models
+namespace PROY_20252SGMG.Dtos.Request
 {
-  public class DetalleReceta
+  public class DetalleRecetaRequestDTO
   {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int IdDetalle { get; set; }
-
-    [ForeignKey(nameof(Receta))]
-    public int IdReceta { get; set; }
-
     [Required(ErrorMessage = "El producto farmacéutico es obligatorio")]
     [StringLength(150)]
     public string ProductoFarmaceutico { get; set; } = "";
@@ -33,11 +28,7 @@ namespace SGMG.Models
     [StringLength(100)]
     public string ViaAdministracion { get; set; } = "";
 
+    [StringLength(500)]
     public string Observaciones { get; set; } = "";
-
-    public string Estado { get; set; } = "PENDIENTE";
-
-    // Relaciones
-    public Receta Receta { get; set; } = null!;
   }
 }

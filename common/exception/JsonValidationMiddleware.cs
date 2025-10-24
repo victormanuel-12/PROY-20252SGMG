@@ -7,9 +7,9 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Logging;
 using SGMG.Dtos.Response;
 
 namespace SGMG.common.middleware
@@ -20,10 +20,12 @@ namespace SGMG.common.middleware
   public class JsonValidationMiddleware
   {
     private readonly RequestDelegate _next;
+    private readonly ILogger<JsonValidationMiddleware> _logger;
 
-    public JsonValidationMiddleware(RequestDelegate next)
+    public JsonValidationMiddleware(RequestDelegate next, ILogger<JsonValidationMiddleware> logger)
     {
       _next = next;
+      _logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -34,11 +36,16 @@ namespace SGMG.common.middleware
            context.Request.Method == "PUT" ||
            context.Request.Method == "PATCH"))
       {
+        _logger.LogInformation("📥 Procesando solicitud {Method} con contenido JSON en {Path}",
+          context.Request.Method, context.Request.Path);
+
         // Obtener el tipo esperado del parámetro del action
         var expectedType = GetExpectedBodyType(context);
 
         if (expectedType != null)
         {
+          _logger.LogInformation("📘 Se detectó tipo esperado para el cuerpo: {ExpectedType}", expectedType.Name);
+
           context.Request.EnableBuffering();
 
           using var reader = new StreamReader(
@@ -51,11 +58,19 @@ namespace SGMG.common.middleware
           var body = await reader.ReadToEndAsync();
           context.Request.Body.Position = 0;
 
+          if (string.IsNullOrWhiteSpace(body))
+          {
+            _logger.LogWarning("⚠️ Cuerpo de la solicitud vacío en {Path}", context.Request.Path);
+          }
+
           // Validar el JSON contra el tipo esperado
           var errors = ValidateJsonAgainstType(body, expectedType);
 
           if (errors.Any())
           {
+            _logger.LogWarning("❌ Se encontraron {Count} errores de validación JSON en {Path}", errors.Count, context.Request.Path);
+            _logger.LogDebug("📄 Detalles de errores: {Errors}", JsonSerializer.Serialize(errors));
+
             var response = new GenericResponse<object>
             {
               Success = false,
@@ -69,6 +84,14 @@ namespace SGMG.common.middleware
             await context.Response.WriteAsJsonAsync(response);
             return;
           }
+          else
+          {
+            _logger.LogInformation("✅ Validación JSON exitosa para {TypeName}", expectedType.Name);
+          }
+        }
+        else
+        {
+          _logger.LogDebug("ℹ️ No se detectó tipo de cuerpo esperado para la ruta {Path}.", context.Request.Path);
         }
       }
 
@@ -80,17 +103,24 @@ namespace SGMG.common.middleware
     /// </summary>
     private Type GetExpectedBodyType(HttpContext context)
     {
-      var endpoint = context.GetEndpoint();
-      if (endpoint == null) return null;
+      try
+      {
+        var endpoint = context.GetEndpoint();
+        if (endpoint == null) return null;
 
-      var actionDescriptor = endpoint.Metadata.GetMetadata<ControllerActionDescriptor>();
-      if (actionDescriptor == null) return null;
+        var actionDescriptor = endpoint.Metadata.GetMetadata<ControllerActionDescriptor>();
+        if (actionDescriptor == null) return null;
 
-      // Buscar el parámetro que viene del Body
-      var bodyParameter = actionDescriptor.Parameters
-        .FirstOrDefault(p => p.BindingInfo?.BindingSource == BindingSource.Body);
+        var bodyParameter = actionDescriptor.Parameters
+          .FirstOrDefault(p => p.BindingInfo?.BindingSource == BindingSource.Body);
 
-      return bodyParameter?.ParameterType;
+        return bodyParameter?.ParameterType;
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "❗ Error obteniendo el tipo esperado del cuerpo.");
+        return null;
+      }
     }
 
     /// <summary>
@@ -105,10 +135,8 @@ namespace SGMG.common.middleware
         using var document = JsonDocument.Parse(jsonBody);
         var root = document.RootElement;
 
-        // Obtener todas las propiedades del tipo esperado
         var properties = expectedType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-        // Validar cada propiedad del JSON contra el tipo esperado
         foreach (var property in root.EnumerateObject())
         {
           var propertyInfo = properties.FirstOrDefault(p =>
@@ -118,14 +146,18 @@ namespace SGMG.common.middleware
           {
             ValidateProperty(property.Value, property.Name, propertyInfo.PropertyType, errors);
           }
+          else
+          {
+            _logger.LogDebug("⚠️ Propiedad '{Property}' no existe en el tipo {ExpectedType}.", property.Name, expectedType.Name);
+          }
         }
       }
-      catch (JsonException)
+      catch (JsonException ex)
       {
+        _logger.LogError(ex, "❌ Error al parsear el JSON recibido.");
         errors["request"] = new List<string> { "El formato JSON es inválido." };
       }
 
-      // Convertir el diccionario a la estructura de respuesta
       return errors.Select(e => new
       {
         Field = e.Key,
@@ -138,21 +170,36 @@ namespace SGMG.common.middleware
     /// </summary>
     private void ValidateProperty(JsonElement element, string propertyName, Type expectedType, Dictionary<string, List<string>> errors)
     {
-      // Obtener el tipo subyacente si es Nullable
       var underlyingType = Nullable.GetUnderlyingType(expectedType) ?? expectedType;
 
-      // Si es null y el tipo no es nullable, es un error (manejado por DataAnnotations)
       if (element.ValueKind == JsonValueKind.Null)
-      {
-        return; // DataAnnotations maneja required
-      }
+        return;
 
-      // Validar según el tipo esperado
-      if (underlyingType == typeof(int) || underlyingType == typeof(long))
+      // 🔹 Mover la validación de listas antes de objetos
+      if (underlyingType.IsGenericType && underlyingType.GetGenericTypeDefinition() == typeof(List<>))
+      {
+        if (element.ValueKind != JsonValueKind.Array)
+        {
+          AddError(errors, propertyName, $"El campo '{propertyName}' debe ser una lista válida.");
+        }
+        else
+        {
+          var itemType = underlyingType.GetGenericArguments()[0];
+          int index = 0;
+          foreach (var item in element.EnumerateArray())
+          {
+            _logger.LogDebug("🔍 Validando elemento {Property}[{Index}] de tipo {ItemType}", propertyName, index, itemType.Name);
+            ValidateProperty(item, $"{propertyName}[{index}]", itemType, errors);
+            index++;
+          }
+        }
+      }
+      else if (underlyingType == typeof(int) || underlyingType == typeof(long))
       {
         if (element.ValueKind != JsonValueKind.Number || !TryParseInteger(element))
         {
           AddError(errors, propertyName, $"El campo '{propertyName}' debe ser un número entero válido.");
+          _logger.LogDebug("🧩 Error de tipo en campo {Field}: esperado entero.", propertyName);
         }
       }
       else if (underlyingType == typeof(decimal) || underlyingType == typeof(double) || underlyingType == typeof(float))
@@ -173,7 +220,7 @@ namespace SGMG.common.middleware
       {
         if (element.ValueKind != JsonValueKind.String || !element.TryGetDateTime(out _))
         {
-          AddError(errors, propertyName, $"El campo '{propertyName}' debe ser una fecha válida (formato: YYYY-MM-DD o YYYY-MM-DDTHH:mm:ss).");
+          AddError(errors, propertyName, $"El campo '{propertyName}' debe ser una fecha válida (YYYY-MM-DD o YYYY-MM-DDTHH:mm:ss).");
         }
       }
       else if (underlyingType == typeof(Guid))
@@ -216,7 +263,6 @@ namespace SGMG.common.middleware
       }
       else if (underlyingType.IsClass && underlyingType != typeof(string))
       {
-        // Objeto anidado
         if (element.ValueKind == JsonValueKind.Object)
         {
           var nestedProperties = underlyingType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -236,40 +282,15 @@ namespace SGMG.common.middleware
           AddError(errors, propertyName, $"El campo '{propertyName}' debe ser un objeto válido.");
         }
       }
-      else if (underlyingType.IsGenericType && underlyingType.GetGenericTypeDefinition() == typeof(List<>))
-      {
-        // Lista
-        if (element.ValueKind != JsonValueKind.Array)
-        {
-          AddError(errors, propertyName, $"El campo '{propertyName}' debe ser una lista válida.");
-        }
-        else
-        {
-          var itemType = underlyingType.GetGenericArguments()[0];
-          int index = 0;
-          foreach (var item in element.EnumerateArray())
-          {
-            ValidateProperty(item, $"{propertyName}[{index}]", itemType, errors);
-            index++;
-          }
-        }
-      }
     }
 
-    /// <summary>
-    /// Intenta parsear un entero desde un JsonElement
-    /// </summary>
     private bool TryParseInteger(JsonElement element)
     {
       return element.TryGetInt32(out _) || element.TryGetInt64(out _);
     }
 
-    /// <summary>
-    /// Agrega un error a la lista de errores
-    /// </summary>
     private void AddError(Dictionary<string, List<string>> errors, string fieldName, string errorMessage)
     {
-      // Limpiar el nombre del campo (quitar prefijos de objetos anidados si es necesario)
       var cleanFieldName = fieldName.Split('.').Last();
 
       if (!errors.ContainsKey(cleanFieldName))

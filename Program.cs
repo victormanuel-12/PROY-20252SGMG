@@ -7,6 +7,8 @@ using SGMG.Services;
 using SGMG.Services.ServiceImpl;
 using SGMG.common.exception;
 using SGMG.common.middleware;
+using PROY_20252SGMG.Repository;
+using PROY_20252SGMG.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +64,11 @@ builder.Services.AddScoped<IPagoRepository, PagoRepository>();
 builder.Services.AddScoped<IDisponibilidadSemanalRepository, DisponibilidadSemanalRepositoryImpl>();
 builder.Services.AddScoped<ITriajeRepository, TriajeRepositoryImpl>();
 builder.Services.AddScoped<ICitaRepository, CitaRepositoryImpl>();
+builder.Services.AddScoped<IRecetaRepository, RecetaRepositoryImpl>();
+
+// Servicios
+
+
 
 // Registro de servicios (Inyección de dependencias)
 builder.Services.AddScoped<IPacienteService, PacienteService>();
@@ -74,6 +81,7 @@ builder.Services.AddScoped<ITriajeService, TriajeService>();
 builder.Services.AddScoped<ICitaService, CitaService>();
 builder.Services.AddScoped<GlobalExceptionFilter>();
 builder.Services.AddScoped<ValidationFilter>();
+builder.Services.AddScoped<IRecetaService, RecetaService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

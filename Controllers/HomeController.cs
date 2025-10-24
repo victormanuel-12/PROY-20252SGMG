@@ -22,6 +22,28 @@ public class HomeController : Controller
     return View();
   }
 
+  public IActionResult Receta()
+  {
+    _logger.LogInformation("Accediendo a la vista de generación de receta médica.");
+    return View();
+  }
+
+
+  [HttpGet("Home/HistorialRecetas/{idPaciente}")]
+  public IActionResult HistorialRecetas(int idPaciente)
+  {
+    if (idPaciente <= 0)
+    {
+      TempData["Error"] = "ID de paciente inválido";
+      return RedirectToAction("Index");
+    }
+
+    // Envía el ID a la vista, útil si vas a hacer una consulta en JS o Razor
+    ViewBag.IdPaciente = idPaciente;
+
+    return View();
+  }
+
   public IActionResult Paciente()
   {
     return View();
