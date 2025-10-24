@@ -78,8 +78,16 @@ public class HomeController : Controller
 
 
   [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-  public IActionResult Error()
+  public IActionResult Error(string? mensaje = null)
   {
-    return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    ViewBag.ErrorMessage = mensaje ?? "Ha ocurrido un error inesperado. Por favor, inténtalo nuevamente.";
+    return View("ErrorCustom");
   }
+  public IActionResult Error404()
+  {
+    Response.StatusCode = 404;
+    return View();
+  }
+
+
 }
