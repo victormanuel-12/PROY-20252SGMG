@@ -126,11 +126,11 @@
         }
 
         .access-btn.secondary {
-            background: #059669;
+            background: #2563eb;
         }
 
         .access-btn.secondary:hover {
-            background: #047857;
+            background: #1e40af;
         }
 
         .diagnostics-table {
