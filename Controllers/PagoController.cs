@@ -44,5 +44,27 @@ namespace SGMG.Controllers
             };
             return Ok(resp);
         }
+
+        [HttpGet]
+        [Route("/pagos/resumen/{id}")]
+        public IActionResult Resumen(int id)
+        {
+            var pagoDto = _pagoService.GetPagoByIdDto(id);
+            if (pagoDto == null)
+                return NotFound();
+            // La vista Resumen se colocó en Views/Home para mantener consistencia con la UI
+            return View("~/Views/Home/Resumen.cshtml", pagoDto);
+        }
+        
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Route("/pagos/pagar/{id}")]
+        public IActionResult Pagar(int id)
+        {
+            var ok = _pagoService.Pagar(id);
+            if (!ok) return NotFound();
+            // Después de pagar, redirigir al resumen para ver el nuevo estado
+            return RedirectToAction("Resumen", new { id });
+        }
     }
 }

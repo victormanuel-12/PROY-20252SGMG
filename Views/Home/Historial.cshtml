@@ -178,11 +178,11 @@
                             <td>
                                 @if (pago?.Estado == "Pendiente")
                                 {
-                                    <a href="#" class="btn btn-primary btn-sm">Pagar cita</a>
+                                    <a href="resumen/@(pago?.Id)" class="btn btn-primary btn-sm">Pagar cita</a>
                                 }
                                 else
                                 {
-                                    <a href="#" class="btn btn-info btn-sm">Detalles</a>
+                                    <a href="resumen/@(pago?.Id)" class="btn btn-info btn-sm">Detalles</a>
                                 }
                             </td>
                         </tr>
