@@ -102,7 +102,15 @@ namespace SGMG.Areas.Identity.Pages.Account
     {
       try
       {
+        var usuariosRegistrados = await _context.Users
+            .Select(u => u.IdUsuario)
+            .ToListAsync();
         var roleName = RolesList.FirstOrDefault(r => r.Value == roleId)?.Text;
+
+
+        _logger.LogInformation("Obteniendo personal para el rol: {RoleName}", roleName);
+        _logger.LogInformation("Usuarios ya registrados: {Ids}", string.Join(", ", usuariosRegistrados));
+
 
         if (string.IsNullOrEmpty(roleName))
         {
@@ -116,7 +124,7 @@ namespace SGMG.Areas.Identity.Pages.Account
           case "MEDICO":
             // 🔹 Buscar en la tabla MEDICO directamente
             var medicos = await _context.Medicos
-                .Where(m => m.EstadoLaboral.ToUpper() == "ACTIVO")
+                .Where(m => m.EstadoLaboral.ToUpper() == "ACTIVO" && !usuariosRegistrados.Contains(m.IdMedico.ToString()))
                 .OrderBy(m => (m.Nombre + " " + m.ApellidoPaterno + " " + m.ApellidoMaterno).Trim())
                 .Select(m => new
                 {
@@ -139,7 +147,7 @@ namespace SGMG.Areas.Identity.Pages.Account
             // 🔹 Buscar PERSONAL TÉCNICO con cargo ENFERMERIA
             var personalEnfermeria = await _context.PersonalTecnicos
                 .Where(p => p.EstadoLaboral.ToUpper() == "ACTIVO" &&
-                           p.Cargo.ToUpper() == "ENFERMERIA")
+                           p.Cargo.ToUpper() == "ENFERMERIA" && !usuariosRegistrados.Contains(p.IdPersonal.ToString()))
                 .OrderBy(p => (p.Nombre + " " + p.ApellidoPaterno + " " + p.ApellidoMaterno).Trim())
                 .ToListAsync();
 
@@ -171,7 +179,7 @@ namespace SGMG.Areas.Identity.Pages.Account
             // 🔹 Buscar PERSONAL TÉCNICO con cargo CAJERO
             var cajeros = await _context.PersonalTecnicos
                 .Where(p => p.EstadoLaboral.ToUpper() == "ACTIVO" &&
-                           p.Cargo.ToUpper() == "CAJERO")
+                           p.Cargo.ToUpper() == "CAJERO" && !usuariosRegistrados.Contains(p.IdPersonal.ToString()))
                 .OrderBy(p => (p.Nombre + " " + p.ApellidoPaterno + " " + p.ApellidoMaterno).Trim())
                 .Select(p => new
                 {
@@ -193,7 +201,7 @@ namespace SGMG.Areas.Identity.Pages.Account
             // 🔹 Buscar PERSONAL TÉCNICO con cargo ADMINISTRADOR
             var administradores = await _context.PersonalTecnicos
                 .Where(p => p.EstadoLaboral.ToUpper() == "ACTIVO" &&
-                           p.Cargo.ToUpper() == "ADMINISTRADOR")
+                           p.Cargo.ToUpper() == "ADMINISTRADOR" && !usuariosRegistrados.Contains(p.IdPersonal.ToString()))
                 .OrderBy(p => (p.Nombre + " " + p.ApellidoPaterno + " " + p.ApellidoMaterno).Trim())
                 .Select(p => new
                 {
