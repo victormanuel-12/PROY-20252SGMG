@@ -577,7 +577,11 @@ async function viewPersonal(id, cargo) {
     } else if (cargo === "ENFERMERIA") {
       endpoint = `/enfermerias/${id}`;
       title = "Detalles de Enfermería";
-    } else if (cargo === "CAJERO" || cargo === "ADMINISTRADOR") {
+    } else if (
+      cargo === "CAJERO" ||
+      cargo === "ADMINISTRADOR" ||
+      cargo === "ADMISION"
+    ) {
       endpoint = `/personal-tecnico/${id}`;
       title = "Detalles del Personal Técnico";
     }
@@ -797,7 +801,11 @@ async function editPersonal(id, cargo) {
     } else if (cargo === "ENFERMERIA") {
       endpoint = `/enfermerias/${id}`;
       title = "Actualizar Enfermería";
-    } else if (cargo === "CAJERO" || cargo === "ADMINISTRADOR") {
+    } else if (
+      cargo === "CAJERO" ||
+      cargo === "ADMINISTRADOR" ||
+      cargo === "ADMISION"
+    ) {
       endpoint = `/personal-tecnico/${id}`;
       title = "Actualizar Personal Técnico";
     }

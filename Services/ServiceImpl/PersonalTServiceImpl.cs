@@ -33,7 +33,7 @@ namespace SGMG.Services.ServiceImpl
         var personalTecnico = await _personalTecnicoRepository.GetPersonalTecnicoByIdAsync(id);
         if (personalTecnico == null)
           return new GenericResponse<PersonalTecnico>(false, "Registro de personal técnico no encontrado.");
-        if (!personalTecnico.Cargo.Contains("ADMINISTRADOR") && !personalTecnico.Cargo.Contains("CAJERO"))
+        if (!personalTecnico.Cargo.Contains("ADMINISTRADOR") && !personalTecnico.Cargo.Contains("CAJERO") && !personalTecnico.Cargo.Contains("ADMISION"))
           return new GenericResponse<PersonalTecnico>(false, "El registro no corresponde a un personal técnico.");
         return new GenericResponse<PersonalTecnico>(true, personalTecnico, "Registro de personal técnico obtenido correctamente.");
       }

@@ -26,24 +26,33 @@ namespace SGMG.Repository.RepositoryImpl
       var medicosActivos = await _context.Medicos
           .Where(m => m.EstadoLaboral == "Activo")
           .CountAsync();
-      var tecnicosActivos = await _context.PersonalTecnicos
-    .Where(pt => pt.EstadoLaboral == "Activo" &&
-                (pt.Cargo.ToUpper().Contains("CAJERO") ||
-                 pt.Cargo.ToUpper().Contains("ADMINISTRADOR")))
-    .CountAsync();
 
+      var tecnicosActivos = await _context.PersonalTecnicos
+          .Where(pt => pt.EstadoLaboral == "Activo" &&
+                      (pt.Cargo.ToUpper().Contains("CAJERO") ||
+                       pt.Cargo.ToUpper().Contains("ADMINISTRADOR") ||
+                       pt.Cargo.ToUpper().Contains("ADMISION")))
+          .CountAsync();
 
       var personalCaja = await _context.PersonalTecnicos
-     .Where(pt => pt.EstadoLaboral == "Activo" &&
-                 (pt.Cargo.ToUpper().Contains("CAJA") ||
-                  pt.Cargo.ToUpper().Contains("CAJERO")))
-     .CountAsync();
+          .Where(pt => pt.EstadoLaboral == "Activo" &&
+                      (pt.Cargo.ToUpper().Contains("CAJA") ||
+                       pt.Cargo.ToUpper().Contains("CAJERO")))
+          .CountAsync();
 
       var cargos = await _context.Cargos.ToListAsync();
       var consultoriosList = await _context.Consultorios.ToListAsync();
       var consultorios = consultoriosList.Count;
 
-      return new ResumenPersonalResponse { MedicosActivos = medicosActivos, TecnicosActivos = tecnicosActivos, Consultorios = consultorios, PersonalCaja = personalCaja, Cargos = cargos, ConsultoriosList = consultoriosList };
+      return new ResumenPersonalResponse
+      {
+        MedicosActivos = medicosActivos,
+        TecnicosActivos = tecnicosActivos,
+        Consultorios = consultorios,
+        PersonalCaja = personalCaja,
+        Cargos = cargos,
+        ConsultoriosList = consultoriosList
+      };
     }
 
     public async Task<IEnumerable<PersonalRegistradoResponse>> BuscarPersonalAsync(PersonalFiltroRequest filtro)
@@ -75,7 +84,9 @@ namespace SGMG.Repository.RepositoryImpl
               Telefono = m.Telefono
             })
             .ToListAsync();
+
         _logger.LogInformation("Medicos encontrados: {Count}", medicos.Count);
+
         resultado.AddRange(medicos.Select(m => new PersonalRegistradoResponse
         {
           Id = m.Id,
@@ -93,6 +104,7 @@ namespace SGMG.Repository.RepositoryImpl
         var queryEnfermeria = _context.Enfermerias
             .Include(e => e.Personal)
             .AsQueryable();
+
         _logger.LogInformation("Iniciando búsqueda de personal de enfermería con filtro: {@Filtro}", filtro);
         _logger.LogInformation("Total de registros en Enfermeria antes de aplicar filtros: {Count}", await queryEnfermeria.CountAsync());
 
@@ -100,12 +112,16 @@ namespace SGMG.Repository.RepositoryImpl
         {
           queryEnfermeria = queryEnfermeria.Where(e => e.Personal.Cargo.ToUpper().Contains("ENFERMERIA"));
         }
+
         _logger.LogInformation("Total de registros en Enfermeria antes de aplicar filtros: {Count}", await queryEnfermeria.CountAsync());
+
         if (filtro.IdConsultorio.HasValue && filtro.IdConsultorio.Value != 0)
         {
           queryEnfermeria = queryEnfermeria.Where(e => e.IdConsultorio == filtro.IdConsultorio.Value);
         }
+
         _logger.LogInformation("Total de registros en Enfermeria antes de aplicar filtros: {Count}", await queryEnfermeria.CountAsync());
+
         var enfermeras = await queryEnfermeria
             .Select(e => new
             {
@@ -129,9 +145,11 @@ namespace SGMG.Repository.RepositoryImpl
           Estado = e.Estado,
           Telefono = e.Telefono
         }));
+
         _logger.LogInformation("Personal de enfermería encontrado: {Count}", enfermeras.Count);
       }
-      // Solo buscar personal técnico (Administrador/Cajero) si no se filtró por consultorio
+
+      // Solo buscar personal técnico (Administrador/Cajero/Admision) si no se filtró por consultorio
       bool buscarPersonalTecnico = (!filtro.IdConsultorio.HasValue || filtro.IdConsultorio.Value == 0);
 
       // ADMINISTRADOR
@@ -196,8 +214,39 @@ namespace SGMG.Repository.RepositoryImpl
         }));
       }
 
+      // ADMISION
+      if (buscarTodos || filtro.TipoPersonal?.Equals("Admision", StringComparison.OrdinalIgnoreCase) == true)
+      {
+        var tecnicos = _context.PersonalTecnicos
+            .Where(pt => pt.Cargo.ToUpper().Contains("ADMISION"));
+
+        var list = await tecnicos.Select(pt => new
+        {
+          Id = pt.IdPersonal,
+          Dni = pt.NumeroDni,
+          Nombre = pt.Nombre,
+          ApellidoPaterno = pt.ApellidoPaterno,
+          ApellidoMaterno = pt.ApellidoMaterno,
+          Cargo = pt.Cargo,
+          Estado = pt.EstadoLaboral,
+          Telefono = pt.Telefono
+        }).ToListAsync();
+
+        _logger.LogInformation("Personal técnico CON ADMISION encontrado: {Count}", list.Count);
+
+        resultado.AddRange(list.Select(t => new PersonalRegistradoResponse
+        {
+          Id = t.Id,
+          Dni = t.Dni,
+          NombresApellidos = $"{t.Nombre} {t.ApellidoPaterno} {t.ApellidoMaterno}",
+          Cargo = t.Cargo,
+          Estado = t.Estado,
+          Telefono = t.Telefono
+        }));
+      }
 
       _logger.LogInformation("Total de personal encontrado antes de aplicar filtros generales: {Count}", resultado.Count);
+
       // FILTROS GENERALES
       var queryFinal = resultado.AsQueryable();
 
@@ -219,7 +268,5 @@ namespace SGMG.Repository.RepositoryImpl
 
       return queryFinal.OrderBy(p => p.NombresApellidos).ToList();
     }
-
-
   }
 }

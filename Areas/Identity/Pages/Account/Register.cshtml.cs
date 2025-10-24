@@ -34,7 +34,8 @@ namespace SGMG.Areas.Identity.Pages.Account
             new SelectListItem { Value = "f3a2c1d4-1234-5678-9abc-def012345678", Text = "ADMINISTRADOR" },
             new SelectListItem { Value = "b1c2d3e4-2345-6789-abcd-ef0123456789", Text = "MEDICO" },
             new SelectListItem { Value = "c1d2e3f4-3456-789a-bcde-f01234567890", Text = "ENFERMERIA" },
-            new SelectListItem { Value = "d1e2f3a4-4567-89ab-cdef-012345678901", Text = "CAJERO" }
+            new SelectListItem { Value = "d1e2f3a4-4567-89ab-cdef-012345678901", Text = "CAJERO" },
+            new SelectListItem { Value = "d1e2f3a4-4567-89ab-cdef-012345671234", Text = "ADMISION" }
         };
 
     public RegisterModel(
@@ -219,6 +220,28 @@ namespace SGMG.Areas.Identity.Pages.Account
             _logger.LogInformation($"Se encontraron {administradores.Count} administradores activos");
             break;
 
+          case "ADMISION":
+            // 🔹 Buscar PERSONAL TÉCNICO con cargo ADMISION
+            var admisionistas = await _context.PersonalTecnicos
+                .Where(p => p.EstadoLaboral.ToUpper() == "ACTIVO" &&
+                           p.Cargo.ToUpper() == "ADMISION" && !usuariosRegistrados.Contains(p.IdPersonal.ToString()))
+                .OrderBy(p => (p.Nombre + " " + p.ApellidoPaterno + " " + p.ApellidoMaterno).Trim())
+                .Select(p => new
+                {
+                  id = p.IdPersonal.ToString(),
+                  nombre = (p.Nombre + " " + p.ApellidoPaterno + " " + p.ApellidoMaterno).Trim(),
+                  numeroDni = p.NumeroDni,
+                  cargo = p.Cargo,
+                  areaServicio = p.AreaServicio,
+                  turno = p.Turno,
+                  fechaIngreso = p.FechaIngreso.ToString("dd/MM/yyyy")
+                })
+                .ToListAsync();
+
+            personalList.AddRange(admisionistas);
+            _logger.LogInformation($"Se encontraron {admisionistas.Count} personal de admisión activo");
+            break;
+
           default:
             _logger.LogWarning($"Rol no reconocido: {roleName}");
             break;
@@ -259,6 +282,7 @@ namespace SGMG.Areas.Identity.Pages.Account
           // - Para ENFERMERIA: IdEnfermeria (de la tabla Enfermeria)
           // - Para CAJERO: IdPersonal
           // - Para ADMINISTRADOR: IdPersonal
+          // - Para ADMISION: IdPersonal
           user.IdUsuario = Input.PersonalId;
 
           await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
@@ -297,6 +321,7 @@ namespace SGMG.Areas.Identity.Pages.Account
               "MEDICO" => RedirectToPage("/Account/Register", new { area = "Identity" }),
               "ENFERMERIA" => RedirectToPage("/Account/Register", new { area = "Identity" }),
               "CAJERO" => RedirectToPage("/Account/Register", new { area = "Identity" }),
+              "ADMISION" => RedirectToPage("/Account/Register", new { area = "Identity" }),
               _ => LocalRedirect(returnUrl)
             };
           }
