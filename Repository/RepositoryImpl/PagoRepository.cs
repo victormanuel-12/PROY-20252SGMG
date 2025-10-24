@@ -29,10 +29,11 @@ namespace SGMG.Repository.RepositoryImpl
             if (!string.IsNullOrWhiteSpace(numeroDocumento))
                 query = query.Where(p => p.Cita != null && p.Cita.Paciente != null && p.Cita.Paciente.NumeroDocumento == numeroDocumento);
 
+            // Filtrar por la fecha de la CITA (FechaCita) en lugar de la fecha de registro (FechaPago)
             if (fechaInicio.HasValue)
-                query = query.Where(p => p.FechaPago >= fechaInicio.Value);
+                query = query.Where(p => p.Cita != null && p.Cita.FechaCita.Date >= fechaInicio.Value.Date);
             if (fechaFin.HasValue)
-                query = query.Where(p => p.FechaPago <= fechaFin.Value);
+                query = query.Where(p => p.Cita != null && p.Cita.FechaCita.Date <= fechaFin.Value.Date);
             if (!string.IsNullOrEmpty(estado) && estado != "Todos")
                 query = query.Where(p => p.EstadoPago == estado);
 
