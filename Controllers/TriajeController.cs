@@ -49,6 +49,14 @@ namespace SGMG.Controllers
 
         // ============== ENDPOINTS API ==============
 
+
+        [HttpGet]
+        [Route("/triaje/buscar")]
+        public async Task<GenericResponse<IEnumerable<TriajeResponseDTO>>> BuscarTriajes([FromQuery] string? tipoDoc,[FromQuery] string? numeroDoc,[FromQuery] DateTime? fechaInicio,[FromQuery] DateTime? fechaFin)
+        {
+            return await _triajeService.BuscarTriajesAsync(tipoDoc, numeroDoc, fechaInicio, fechaFin);
+        }
+
         [HttpPost]
         [Route("/triaje/register")]
         public async Task<GenericResponse<Triaje>> CreateTriaje([FromBody] TriajeRequestDTO triajeRequestDTO)

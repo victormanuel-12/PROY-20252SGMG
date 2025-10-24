@@ -3,13 +3,13 @@ let tabActual = "por-triar";
 let pacientesData = [];
 
 document.addEventListener("DOMContentLoaded", function() {
-    console.log("Página cargada, iniciando..."); // DEBUG
+    console.log("Página cargada, iniciando...");
     cargarPacientesPorTriar();
 });
 
 // Cambiar de tab
 function cambiarTab(tab) {
-    console.log("Cambiando a tab:", tab); // DEBUG
+    console.log("Cambiando a tab:", tab);
     tabActual = tab;
     
     // Actualizar estilos de tabs
@@ -19,17 +19,20 @@ function cambiarTab(tab) {
     // Mostrar/ocultar campos de fecha según el tab
     const fechaInicioGroup = document.getElementById('fechaInicioGroup');
     const fechaFinGroup = document.getElementById('fechaFinGroup');
-    const columnAction = document.getElementById('columnAction');
 
     if (tab === 'triados') {
         fechaInicioGroup.style.display = 'flex';
         fechaFinGroup.style.display = 'flex';
-        columnAction.textContent = 'Acción';
     } else {
         fechaInicioGroup.style.display = 'none';
         fechaFinGroup.style.display = 'none';
-        columnAction.textContent = 'Acción';
     }
+
+    // Limpiar campos de búsqueda
+    document.getElementById('tipoBusqueda').value = 'Seleccione';
+    document.getElementById('numeroDocumento').value = '';
+    if (document.getElementById('fechaInicio')) document.getElementById('fechaInicio').value = '';
+    if (document.getElementById('fechaFin')) document.getElementById('fechaFin').value = '';
 
     // Cargar datos según el tab
     if (tab === 'por-triar') {
@@ -44,89 +47,194 @@ function cambiarTab(tab) {
 // Buscar pacientes
 function buscarPacientes(e) {
     e.preventDefault();
-    console.log("Buscando pacientes en tab:", tabActual); // DEBUG
-    cambiarTab(tabActual);
+    console.log("Buscando pacientes en tab:", tabActual);
+    
+    const tipoDoc = document.getElementById('tipoBusqueda').value;
+    const numeroDoc = document.getElementById('numeroDocumento').value.trim();
+
+    // Validar que se haya seleccionado tipo de documento
+    if (tipoDoc === 'Seleccione' || !tipoDoc) {
+        alert('Por favor seleccione un tipo de documento');
+        return;
+    }
+
+    // Validar que se haya ingresado número de documento
+    if (!numeroDoc) {
+        alert('Por favor ingrese el número de documento');
+        return;
+    }
+
+    if (tabActual === 'triados') {
+        const fechaInicio = document.getElementById('fechaInicio')?.value;
+        const fechaFin = document.getElementById('fechaFin')?.value;
+        buscarTriajes(tipoDoc, numeroDoc, fechaInicio, fechaFin);
+    } else if (tabActual === 'por-triar') {
+        buscarCitasPendientes(tipoDoc, numeroDoc);
+    } else if (tabActual === 'fuera-horario') {
+        buscarCitasFueraHorario(tipoDoc, numeroDoc);
+    }
+}
+
+// Buscar citas pendientes
+async function buscarCitasPendientes(tipoDoc, numeroDoc) {
+    console.log(`Buscando citas pendientes: ${tipoDoc} - ${numeroDoc}`);
+    try {
+        const url = `${API_BASE_URL}/citas/buscar-pendientes?tipoDoc=${encodeURIComponent(tipoDoc)}&numeroDoc=${encodeURIComponent(numeroDoc)}`;
+        console.log("URL:", url);
+        
+        const res = await fetch(url);
+        const result = await res.json();
+        console.log("Resultado:", result);
+
+        if (result.success && result.data) {
+            if (result.data.length === 0) {
+                alert('No se encontraron citas pendientes con ese documento');
+                renderizarTabla([], 'triar');
+            } else {
+                renderizarTabla(result.data, 'triar');
+            }
+        } else {
+            alert(result.message || 'Error en la búsqueda');
+            renderizarTabla([], 'triar');
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert('Error al realizar la búsqueda');
+        renderizarTabla([], 'triar');
+    }
+}
+
+// Buscar citas fuera de horario
+async function buscarCitasFueraHorario(tipoDoc, numeroDoc) {
+    console.log(`Buscando citas fuera de horario: ${tipoDoc} - ${numeroDoc}`);
+    try {
+        const url = `${API_BASE_URL}/citas/buscar-fuera-horario?tipoDoc=${encodeURIComponent(tipoDoc)}&numeroDoc=${encodeURIComponent(numeroDoc)}`;
+        console.log("URL:", url);
+        
+        const res = await fetch(url);
+        const result = await res.json();
+        console.log("Resultado:", result);
+
+        if (result.success && result.data) {
+            if (result.data.length === 0) {
+                alert('No se encontraron citas fuera de horario con ese documento');
+                renderizarTabla([], 'triar');
+            } else {
+                renderizarTabla(result.data, 'triar');
+            }
+        } else {
+            alert(result.message || 'Error en la búsqueda');
+            renderizarTabla([], 'triar');
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert('Error al realizar la búsqueda');
+        renderizarTabla([], 'triar');
+    }
+}
+
+// Buscar triajes
+async function buscarTriajes(tipoDoc, numeroDoc, fechaInicio, fechaFin) {
+    console.log(`Buscando triajes: ${tipoDoc} - ${numeroDoc}, Fechas: ${fechaInicio} a ${fechaFin}`);
+    try {
+        let url = `${API_BASE_URL}/triaje/buscar?`;
+        
+        if (tipoDoc && tipoDoc !== 'Seleccione') {
+            url += `tipoDoc=${encodeURIComponent(tipoDoc)}&`;
+        }
+        if (numeroDoc) {
+            url += `numeroDoc=${encodeURIComponent(numeroDoc)}&`;
+        }
+        if (fechaInicio) {
+            url += `fechaInicio=${encodeURIComponent(fechaInicio)}&`;
+        }
+        if (fechaFin) {
+            url += `fechaFin=${encodeURIComponent(fechaFin)}&`;
+        }
+        
+        url = url.slice(0, -1); // Quitar el último &
+        console.log("URL:", url);
+        
+        const res = await fetch(url);
+        const result = await res.json();
+        console.log("Resultado:", result);
+
+        if (result.success && result.data) {
+            if (result.data.length === 0) {
+                alert('No se encontraron triajes con esos criterios');
+                renderizarTabla([], 'editar');
+            } else {
+                renderizarTabla(result.data, 'editar');
+            }
+        } else {
+            alert(result.message || 'Error en la búsqueda');
+            renderizarTabla([], 'editar');
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert('Error al realizar la búsqueda');
+        renderizarTabla([], 'editar');
+    }
 }
 
 // Cargar pacientes por triar
 async function cargarPacientesPorTriar() {
-    console.log("Llamando a /citas/pendientes..."); // DEBUG
+    console.log("Llamando a /citas/pendientes...");
     try {
         const res = await fetch(`${API_BASE_URL}/citas/pendientes`);
-        console.log("Response status:", res.status); // DEBUG
-        
         const result = await res.json();
-        console.log("Resultado completo:", result); // DEBUG
-        console.log("Success:", result.success); // DEBUG
-        console.log("Data:", result.data); // DEBUG
+        console.log("Resultado:", result);
 
         if (result.success && result.data) {
-            console.log("Total registros:", result.data.length); // DEBUG
-            // Ver estructura del primer elemento
-            if (result.data.length > 0) {
-                console.log("Primer elemento:", result.data[0]); // DEBUG
-            }
             renderizarTabla(result.data, 'triar');
         } else {
-            console.warn("No hay datos o error:", result.message); // DEBUG
             renderizarTabla([], 'triar');
         }
     } catch (error) {
-        console.error("Error al cargar citas pendientes:", error); // DEBUG
+        console.error("Error:", error);
         renderizarTabla([], 'triar');
     }
 }
 
 // Cargar pacientes fuera de horario
 async function cargarPacientesFueraHorario() {
-    console.log("Llamando a /citas/fuera-horario..."); // DEBUG
+    console.log("Llamando a /citas/fuera-horario...");
     try {
         const res = await fetch(`${API_BASE_URL}/citas/fuera-horario`);
-        console.log("Response status:", res.status); // DEBUG
-        
         const result = await res.json();
-        console.log("Resultado completo:", result); // DEBUG
+        console.log("Resultado:", result);
 
         if (result.success && result.data) {
-            console.log("Total registros:", result.data.length); // DEBUG
             renderizarTabla(result.data, 'triar');
         } else {
-            console.warn("No hay datos o error:", result.message); // DEBUG
             renderizarTabla([], 'triar');
         }
     } catch (error) {
-        console.error("Error al cargar citas fuera de horario:", error); // DEBUG
+        console.error("Error:", error);
         renderizarTabla([], 'triar');
     }
 }
 
 // Cargar pacientes ya triados
 async function cargarPacientesTriados() {
-    console.log("Llamando a /triaje/all..."); // DEBUG
+    console.log("Llamando a /triaje/all...");
     try {
         const res = await fetch(`${API_BASE_URL}/triaje/all`);
-        console.log("Response status:", res.status); // DEBUG
-        
         const result = await res.json();
-        console.log("Resultado completo:", result); // DEBUG
+        console.log("Resultado:", result);
 
         if (result.success && result.data) {
-            console.log("Total registros:", result.data.length); // DEBUG
-            if (result.data.length > 0) {
-                console.log("Primer triaje:", result.data[0]); // DEBUG
-            }
             renderizarTabla(result.data, 'editar');
         } else {
-            console.warn("No hay datos o error:", result.message); // DEBUG
             renderizarTabla([], 'editar');
         }
     } catch (error) {
-        console.error("Error al cargar triajes:", error); // DEBUG
+        console.error("Error:", error);
         renderizarTabla([], 'editar');
     }
 }
 
-// Renderizar tabla
+// Renderizar tabla (sin cambios)
 function renderizarTabla(data, tipo) {
     console.log("Renderizando:", data?.length, "registros, tipo:", tipo);
     const tbody = document.getElementById('tablaPacientesBody');
@@ -137,76 +245,52 @@ function renderizarTabla(data, tipo) {
     }
 
     if (tipo === 'editar') {
-        // Renderizar triajes (pacientes ya triados) - Usando DTO
         tbody.innerHTML = data.map(item => {
-            const documento = item.numeroDocumento || '';
-            const nombre = item.nombreCompletoPaciente || '';
-            const consultorio = item.consultorio || '';
-            const horaCita = item.horaCita || '';
-            const fechaCita = item.fechaCita || '';
-            const nombreMedico = item.nombreCompletoMedico || '';
-            const idPaciente = item.idPaciente;
-            const idTriaje = item.idTriaje;
-
-            const fechaFormateada = fechaCita ? new Date(fechaCita).toLocaleDateString('es-PE') : '-';
-
+            const fechaFormateada = item.fechaCita ? new Date(item.fechaCita).toLocaleDateString('es-PE') : '-';
             return `
                 <tr>
-                    <td>${documento}</td>
-                    <td>${nombre}</td>
-                    <td>${consultorio}</td>
-                    <td>${horaCita}</td>
+                    <td>${item.numeroDocumento || ''}</td>
+                    <td>${item.nombreCompletoPaciente || ''}</td>
+                    <td>${item.consultorio || ''}</td>
+                    <td>${item.horaCita || ''}</td>
                     <td>${fechaFormateada}</td>
-                    <td>${nombreMedico}</td>
-                    <td><button class="btn-action btn-editar" onclick="irAEditarTriaje(${idTriaje}, ${idPaciente})">Editar</button></td>
+                    <td>${item.nombreCompletoMedico || ''}</td>
+                    <td><button class="btn-action btn-editar" onclick="irAEditarTriaje(${item.idTriaje}, ${item.idPaciente})">Editar</button></td>
                 </tr>
             `;
         }).join('');
     } else {
-        // Renderizar citas (pacientes por triar) - Ya está con DTO
         tbody.innerHTML = data.map(item => {
-            const documento = item.numeroDocumento || '';
-            const nombre = item.nombreCompletoPaciente || '';
-            const consultorio = item.consultorio || '';
-            const horaCita = item.horaCita || '';
-            const fechaCita = item.fechaCita || '';
-            const nombreMedico = item.nombreCompletoMedico || '';
-            const idPaciente = item.idPaciente;
-
-            const fechaFormateada = fechaCita ? new Date(fechaCita).toLocaleDateString('es-PE') : '-';
-
+            const fechaFormateada = item.fechaCita ? new Date(item.fechaCita).toLocaleDateString('es-PE') : '-';
             return `
                 <tr>
-                    <td>${documento}</td>
-                    <td>${nombre}</td>
-                    <td>${consultorio}</td>
-                    <td>${horaCita}</td>
+                    <td>${item.numeroDocumento || ''}</td>
+                    <td>${item.nombreCompletoPaciente || ''}</td>
+                    <td>${item.consultorio || ''}</td>
+                    <td>${item.horaCita || ''}</td>
                     <td>${fechaFormateada}</td>
-                    <td>${nombreMedico}</td>
-                    <td><button class="btn-action btn-triar" onclick="irARegistrarTriaje(${idPaciente})">Triar</button></td>
+                    <td>${item.nombreCompletoMedico || ''}</td>
+                    <td><button class="btn-action btn-triar" onclick="irARegistrarTriaje(${item.idPaciente})">Triar</button></td>
                 </tr>
             `;
         }).join('');
     }
 }
 
-
 // Ir a registrar triaje
 function irARegistrarTriaje(idPaciente) {
-    console.log("Redirigiendo a registrar triaje, paciente:", idPaciente); // DEBUG
+    console.log("Redirigiendo a registrar triaje, paciente:", idPaciente);
     window.location.href = `/triaje/registrar?idPaciente=${idPaciente}`;
 }
 
 // Ir a editar triaje
 function irAEditarTriaje(idTriaje, idPaciente) {
-    console.log("Redirigiendo a editar triaje:", idTriaje, "paciente:", idPaciente); // DEBUG
+    console.log("Redirigiendo a editar triaje:", idTriaje, "paciente:", idPaciente);
     window.location.href = `/triaje/editar?idTriaje=${idTriaje}&idPaciente=${idPaciente}`;
 }
 
 // Paginación (por implementar)
 function cambiarPagina(direccion) {
-    console.log("Cambiar página:", direccion); // DEBUG
+    console.log("Cambiar página:", direccion);
 }
-
-
 
