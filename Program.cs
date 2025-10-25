@@ -10,7 +10,14 @@ using SGMG.common.middleware;
 using PROY_20252SGMG.Repository;
 using PROY_20252SGMG.Services;
 using PROY_20252SGMG.Models;
+using NuGet.Packaging;
+using QuestPDF.Infrastructure;
 
+// QuestPDF.Settings.License = LicenseType.Community;
+// The installed QuestPDF package version does not contain LicenseType.Community.
+// If your QuestPDF version requires a license, set the appropriate value provided by that package
+// or register a license according to the QuestPDF documentation.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
