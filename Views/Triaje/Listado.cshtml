@@ -9,7 +9,31 @@
 
 <div class="page-container">
     <div class="page-title-container">
-        <h2>Listado de pacientes</h2>
+       <div class="bienvenida-card">
+    @if (ViewData["NombreEnfermera"] != null)
+    {
+        @{
+            var nombre = ViewData["NombreEnfermera"].ToString();
+            var genero = ViewData["GeneroEnfermera"]?.ToString(); // "F" o "M"
+            var saludo = genero == "F" ? "Bienvenida" : "Bienvenido";
+            var icono = genero == "F" ? "👩‍⚕️" : "👨‍⚕️";
+        }
+
+        <div class="bienvenida-contenido">
+            <div class="bienvenida-texto">
+                <span class="bienvenida-saludo">@saludo</span>  
+                <span class="bienvenida-nombre">@nombre</span>  
+                <span class="bienvenida-icono">@icono</span>
+            </div>
+        </div>
+    }
+</div>
+
+
+
+
+        <br>
+        <h2 >Listado de pacientes</h2>
     </div>
 
     <!-- Tabs -->
