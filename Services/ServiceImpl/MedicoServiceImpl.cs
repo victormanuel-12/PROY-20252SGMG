@@ -9,7 +9,13 @@ using SGMG.Models;
 using SGMG.Repository;
 using SGMG.Services;
 using Microsoft.Extensions.Logging;
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore; // ← AGREGAR ESTE
+using SGMG.Data; // ← AGREGAR ESTE
 
 namespace SGMG.Services.ServiceImpl
 {
@@ -18,16 +24,77 @@ namespace SGMG.Services.ServiceImpl
     private readonly IMedicoRepository _medicoRepository;
     private readonly IDisponibilidadSemanalRepository _disponibilidadRepository;
     private readonly ILogger<MedicoServiceImpl> _logger;
+    private readonly ApplicationDbContext _context; // ← AGREGAR ESTE CAMPO
 
     public MedicoServiceImpl(
         IMedicoRepository medicoRepository,
         IDisponibilidadSemanalRepository disponibilidadRepository,
-        ILogger<MedicoServiceImpl> logger)
+        ILogger<MedicoServiceImpl> logger,
+        ApplicationDbContext context) // ← AGREGAR ESTE PARÁMETRO
     {
       _medicoRepository = medicoRepository;
       _disponibilidadRepository = disponibilidadRepository;
       _logger = logger;
+      _context = context; // ← AGREGAR ESTA LÍNEA
     }
+
+
+        // ← AGREGAR ESTE NUEVO MÉTODO AL FINAL DE LA CLASE
+public async Task<GenericResponse<Medico>> GetMedicoByUserIdAsync(string userId)
+{
+    try
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            return new GenericResponse<Medico>
+            {
+                Success = false,
+                Message = "UserId no puede ser nulo o vacío"
+            };
+        }
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null || string.IsNullOrEmpty(user.IdUsuario))
+        {
+            return new GenericResponse<Medico>
+            {
+                Success = false,
+                Message = "Usuario no encontrado"
+            };
+        }
+
+        if (int.TryParse(user.IdUsuario, out int idMedico))
+        {
+            var medico = await _medicoRepository.GetMedicoByIdAsync(idMedico);
+
+            if (medico != null)
+            {
+                return new GenericResponse<Medico>
+                {
+                    Success = true,
+                    Message = "Médico encontrado",
+                    Data = medico
+                };
+            }
+        }
+
+        return new GenericResponse<Medico>
+        {
+            Success = false,
+            Message = "Médico no encontrado para este usuario"
+        };
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error al obtener médico por userId: {UserId}", userId);
+        return new GenericResponse<Medico>
+        {
+            Success = false,
+            Message = $"Error: {ex.Message}"
+        };
+    }
+}
+
     public async Task<GenericResponse<IEnumerable<Medico>>> GetAllMedicosAsync()
     {
       try
