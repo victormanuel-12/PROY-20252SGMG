@@ -6,65 +6,170 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using SGMG.Dtos.Response; // <-- agregado
+using SGMG.Models;
+using SGMG.Repository;
+using SGMG.Data;
 // ...existing code...
 namespace SGMG.Controllers
 {
-    public class PagoController : Controller
+  public class PagoController : Controller
+  {
+    private readonly IPagoService _pagoService;
+    private readonly IPagoRepository _pagoRepository;
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<PagoController> _logger;
+
+    public PagoController(IPagoService pagoService, IPagoRepository pagoRepository, ApplicationDbContext context, ILogger<PagoController> logger)
     {
-        private readonly IPagoService _pagoService;
-        public PagoController(IPagoService pagoService)
-        {
-            _pagoService = pagoService;
-        }
+      _pagoService = pagoService;
+      _pagoRepository = pagoRepository;
+      _context = context;
+      _logger = logger;
+    }
 
     [HttpGet]
     [NoValidation]
     [Route("/pagos/all")]
     public IActionResult Historial(string tipoBusqueda, string numeroDocumento, DateTime? inicio, DateTime? fin, string estado)
-        {
-            // El controlador delega la lógica al servicio
-            var tipoDocumento = tipoBusqueda;
-            var pagosDto = _pagoService.GetHistorialPagosDto(tipoDocumento, numeroDocumento, inicio, fin, estado);
-            // La vista real está en Views/Home/Historial.cshtml, indicar la ruta completa para evitar búsquedas en /Views/Pago/
-            var model = pagosDto ?? new List<PagoResponseDTO>();
-            return View("~/Views/Home/Historial.cshtml", model);
-        }
+    {
+      // El controlador delega la lógica al servicio
+      var tipoDocumento = tipoBusqueda;
+      var pagosDto = _pagoService.GetHistorialPagosDto(tipoDocumento, numeroDocumento, inicio, fin, estado);
+      // La vista real está en Views/Home/Historial.cshtml, indicar la ruta completa para evitar búsquedas en /Views/Pago/
+      var model = pagosDto ?? new List<PagoResponseDTO>();
+      return View("~/Views/Home/Historial.cshtml", model);
+    }
 
     [HttpGet]
     [Route("/pagos/search")]
     public ActionResult<GenericResponse<IEnumerable<PagoResponseDTO>>> Search(string tipoBusqueda, string numeroDocumento, DateTime? inicio, DateTime? fin, string estado)
+    {
+      var tipoDocumento = tipoBusqueda;
+      var pagosDto = _pagoService.GetHistorialPagosDto(tipoDocumento, numeroDocumento, inicio, fin, estado) ?? Enumerable.Empty<PagoResponseDTO>();
+      var resp = new GenericResponse<IEnumerable<PagoResponseDTO>>
+      {
+        Success = true,
+        Message = "OK",
+        Data = pagosDto
+      };
+      return Ok(resp);
+    }
+
+    [HttpGet]
+    [Route("/pagos/resumen/{id}")]
+    public IActionResult Resumen(int id)
+    {
+      _logger.LogInformation($"Solicitando resumen para Cita ID={id}");
+
+      // Usar el nuevo método que busca por ID de Cita
+      var pagoDto = _pagoService.GetResumenByCitaId(id);
+
+      if (pagoDto == null)
+      {
+        _logger.LogWarning($"No se encontró información para la Cita ID={id}");
+        return NotFound();
+      }
+
+      _logger.LogInformation($"Mostrando resumen de Cita ID={id}, Paciente={pagoDto.Nombres}");
+
+      return View("~/Views/Home/Resumen.cshtml", pagoDto);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Route("/pagos/pagar/{id}")]
+    public IActionResult Pagar(int id)
+    {
+      _logger.LogInformation($"=== INICIO Pagar (Cita ID={id}) ===");
+
+      try
+      {
+        // Obtener la cita directamente desde el repositorio
+        var cita = _pagoRepository.GetCitaById(id);
+
+        if (cita == null)
         {
-            var tipoDocumento = tipoBusqueda;
-            var pagosDto = _pagoService.GetHistorialPagosDto(tipoDocumento, numeroDocumento, inicio, fin, estado) ?? Enumerable.Empty<PagoResponseDTO>();
-            var resp = new GenericResponse<IEnumerable<PagoResponseDTO>>
-            {
-                Success = true,
-                Message = "OK",
-                Data = pagosDto
-            };
-            return Ok(resp);
+          _logger.LogWarning($"No se encontró la Cita ID={id}");
+          return NotFound();
         }
 
-        [HttpGet]
-        [Route("/pagos/resumen/{id}")]
-        public IActionResult Resumen(int id)
+        _logger.LogInformation($"Cita encontrada: ID={cita.IdCita}, Paciente={cita.Paciente?.NumeroDocumento}");
+        _logger.LogInformation($"Cantidad de pagos asociados: {cita.Pagos?.Count ?? 0}");
+
+        // Verificar si ya tiene un pago
+        var pagoExistente = cita.Pagos?.FirstOrDefault();
+
+        if (pagoExistente != null)
         {
-            var pagoDto = _pagoService.GetPagoByIdDto(id);
-            if (pagoDto == null)
-                return NotFound();
-            // La vista Resumen se colocó en Views/Home para mantener consistencia con la UI
-            return View("~/Views/Home/Resumen.cshtml", pagoDto);
+          _logger.LogInformation($"La cita ya tiene un pago ID={pagoExistente.IdPago}, Estado={pagoExistente.EstadoPago}");
+
+          // Si el pago existe pero está Pendiente, actualizarlo a Pagado
+          if (pagoExistente.EstadoPago == "Pendiente")
+          {
+            _logger.LogInformation($"Actualizando pago existente ID={pagoExistente.IdPago} a estado Pagado");
+            var actualizado = _pagoRepository.UpdatePagoStatus(pagoExistente.IdPago, "Pagado", DateTime.Now);
+
+            if (actualizado)
+            {
+              _logger.LogInformation($"✅ Pago ID={pagoExistente.IdPago} actualizado a Pagado exitosamente");
+              TempData["Success"] = "Pago procesado exitosamente";
+            }
+            else
+            {
+              _logger.LogError($"❌ Error al actualizar el pago ID={pagoExistente.IdPago}");
+              TempData["Error"] = "Error al procesar el pago";
+            }
+          }
+          else
+          {
+            _logger.LogInformation($"El pago ya está en estado: {pagoExistente.EstadoPago}");
+            TempData["Info"] = $"El pago ya está {pagoExistente.EstadoPago}";
+          }
         }
-        
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Route("/pagos/pagar/{id}")]
-        public IActionResult Pagar(int id)
+        else
         {
-            var ok = _pagoService.Pagar(id);
-            if (!ok) return NotFound();
-            // Después de pagar, redirigir al resumen para ver el nuevo estado
-            return RedirectToAction("Resumen", new { id });
+          _logger.LogWarning($"⚠️ La cita ID={id} NO tiene pago asociado - Creando nuevo pago");
+
+          // Crear un nuevo registro de pago directamente con el contexto
+          var nuevoPago = new Pago
+          {
+            IdCita = id,
+            CodigoServicio = "SERV-001",
+            DescripcionServicio = "Consulta Medicina General",
+            Cantidad = 1,
+            PrecioUnitario = 50.0m,
+            Subtotal = 50.0m,
+            Igv = 9.0m,
+            Total = 59.0m,
+            EstadoPago = "Pagado",
+            FechaPago = DateTime.Now
+          };
+
+          _context.Pagos.Add(nuevoPago);
+          var filasAfectadas = _context.SaveChanges();
+
+          if (filasAfectadas > 0)
+          {
+            _logger.LogInformation($"✅ Nuevo pago creado exitosamente: ID={nuevoPago.IdPago}, Total={nuevoPago.Total}");
+            TempData["Success"] = "Pago creado y procesado exitosamente";
+          }
+          else
+          {
+            _logger.LogError($"❌ Error al crear el pago para la Cita ID={id}");
+            TempData["Error"] = "No se pudo crear el pago";
+          }
         }
+
+        _logger.LogInformation("=== FIN Pagar ===");
+        return RedirectToAction("Resumen", new { id });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError($"❌ Excepción en Pagar: {ex.Message}");
+        _logger.LogError($"StackTrace: {ex.StackTrace}");
+        TempData["Error"] = "Ocurrió un error al procesar el pago";
+        return RedirectToAction("Resumen", new { id });
+      }
     }
+  }
 }

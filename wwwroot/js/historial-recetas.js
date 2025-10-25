@@ -3,7 +3,7 @@
 // ===================================
 
 (function () {
-  "use strict";
+  ("use strict");
 
   // Variables globales
   let idPaciente = null;
@@ -261,28 +261,10 @@
   }
 
   // ===== IMPRIMIR RECETA =====
-  window.imprimirReceta = async function (idReceta) {
-    try {
-      const response = await fetch(`/RecetaMedica/imprimir/${idReceta}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        mostrarExito("Receta marcada como impresa");
-        // Aquí podrías abrir una ventana de impresión o generar un PDF
-        // window.open(`/RecetaMedica/Imprimir/${idReceta}`, '_blank');
-      } else {
-        mostrarError(data.message || "Error al imprimir la receta");
-      }
-    } catch (error) {
-      console.error("Error al imprimir:", error);
-      mostrarError("Error al procesar la impresión");
-    }
+  // En historial-recetas.js, reemplaza la función imprimirReceta:
+  window.imprimirReceta = function (idReceta) {
+    // Descargar directamente el PDF
+    window.location.href = `/RecetaMedica/imprimir/${idReceta}`;
   };
 
   // ===== MARCAR FILA SELECCIONADA =====

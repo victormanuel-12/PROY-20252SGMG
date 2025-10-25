@@ -34,7 +34,8 @@ namespace SGMG.Areas.Identity.Pages.Account
             new SelectListItem { Value = "f3a2c1d4-1234-5678-9abc-def012345678", Text = "ADMINISTRADOR" },
             new SelectListItem { Value = "b1c2d3e4-2345-6789-abcd-ef0123456789", Text = "MEDICO" },
             new SelectListItem { Value = "c1d2e3f4-3456-789a-bcde-f01234567890", Text = "ENFERMERIA" },
-            new SelectListItem { Value = "d1e2f3a4-4567-89ab-cdef-012345678901", Text = "CAJERO" }
+            new SelectListItem { Value = "d1e2f3a4-4567-89ab-cdef-012345678901", Text = "CAJERO" },
+            new SelectListItem { Value = "d1e2f3a4-4567-89ab-cdef-012345671234", Text = "ADMISION" }
         };
 
     public RegisterModel(
@@ -102,7 +103,15 @@ namespace SGMG.Areas.Identity.Pages.Account
     {
       try
       {
+        var usuariosRegistrados = await _context.Users
+            .Select(u => u.IdUsuario)
+            .ToListAsync();
         var roleName = RolesList.FirstOrDefault(r => r.Value == roleId)?.Text;
+
+
+        _logger.LogInformation("Obteniendo personal para el rol: {RoleName}", roleName);
+        _logger.LogInformation("Usuarios ya registrados: {Ids}", string.Join(", ", usuariosRegistrados));
+
 
         if (string.IsNullOrEmpty(roleName))
         {
@@ -116,7 +125,7 @@ namespace SGMG.Areas.Identity.Pages.Account
           case "MEDICO":
             // 🔹 Buscar en la tabla MEDICO directamente
             var medicos = await _context.Medicos
-                .Where(m => m.EstadoLaboral.ToUpper() == "ACTIVO")
+                .Where(m => m.EstadoLaboral.ToUpper() == "ACTIVO" && !usuariosRegistrados.Contains(m.IdMedico.ToString()))
                 .OrderBy(m => (m.Nombre + " " + m.ApellidoPaterno + " " + m.ApellidoMaterno).Trim())
                 .Select(m => new
                 {
@@ -139,7 +148,7 @@ namespace SGMG.Areas.Identity.Pages.Account
             // 🔹 Buscar PERSONAL TÉCNICO con cargo ENFERMERIA
             var personalEnfermeria = await _context.PersonalTecnicos
                 .Where(p => p.EstadoLaboral.ToUpper() == "ACTIVO" &&
-                           p.Cargo.ToUpper() == "ENFERMERIA")
+                           p.Cargo.ToUpper() == "ENFERMERIA" && !usuariosRegistrados.Contains(p.IdPersonal.ToString()))
                 .OrderBy(p => (p.Nombre + " " + p.ApellidoPaterno + " " + p.ApellidoMaterno).Trim())
                 .ToListAsync();
 
@@ -171,7 +180,7 @@ namespace SGMG.Areas.Identity.Pages.Account
             // 🔹 Buscar PERSONAL TÉCNICO con cargo CAJERO
             var cajeros = await _context.PersonalTecnicos
                 .Where(p => p.EstadoLaboral.ToUpper() == "ACTIVO" &&
-                           p.Cargo.ToUpper() == "CAJERO")
+                           p.Cargo.ToUpper() == "CAJERO" && !usuariosRegistrados.Contains(p.IdPersonal.ToString()))
                 .OrderBy(p => (p.Nombre + " " + p.ApellidoPaterno + " " + p.ApellidoMaterno).Trim())
                 .Select(p => new
                 {
@@ -193,7 +202,7 @@ namespace SGMG.Areas.Identity.Pages.Account
             // 🔹 Buscar PERSONAL TÉCNICO con cargo ADMINISTRADOR
             var administradores = await _context.PersonalTecnicos
                 .Where(p => p.EstadoLaboral.ToUpper() == "ACTIVO" &&
-                           p.Cargo.ToUpper() == "ADMINISTRADOR")
+                           p.Cargo.ToUpper() == "ADMINISTRADOR" && !usuariosRegistrados.Contains(p.IdPersonal.ToString()))
                 .OrderBy(p => (p.Nombre + " " + p.ApellidoPaterno + " " + p.ApellidoMaterno).Trim())
                 .Select(p => new
                 {
@@ -209,6 +218,28 @@ namespace SGMG.Areas.Identity.Pages.Account
 
             personalList.AddRange(administradores);
             _logger.LogInformation($"Se encontraron {administradores.Count} administradores activos");
+            break;
+
+          case "ADMISION":
+            // 🔹 Buscar PERSONAL TÉCNICO con cargo ADMISION
+            var admisionistas = await _context.PersonalTecnicos
+                .Where(p => p.EstadoLaboral.ToUpper() == "ACTIVO" &&
+                           p.Cargo.ToUpper() == "ADMISION" && !usuariosRegistrados.Contains(p.IdPersonal.ToString()))
+                .OrderBy(p => (p.Nombre + " " + p.ApellidoPaterno + " " + p.ApellidoMaterno).Trim())
+                .Select(p => new
+                {
+                  id = p.IdPersonal.ToString(),
+                  nombre = (p.Nombre + " " + p.ApellidoPaterno + " " + p.ApellidoMaterno).Trim(),
+                  numeroDni = p.NumeroDni,
+                  cargo = p.Cargo,
+                  areaServicio = p.AreaServicio,
+                  turno = p.Turno,
+                  fechaIngreso = p.FechaIngreso.ToString("dd/MM/yyyy")
+                })
+                .ToListAsync();
+
+            personalList.AddRange(admisionistas);
+            _logger.LogInformation($"Se encontraron {admisionistas.Count} personal de admisión activo");
             break;
 
           default:
@@ -251,6 +282,7 @@ namespace SGMG.Areas.Identity.Pages.Account
           // - Para ENFERMERIA: IdEnfermeria (de la tabla Enfermeria)
           // - Para CAJERO: IdPersonal
           // - Para ADMINISTRADOR: IdPersonal
+          // - Para ADMISION: IdPersonal
           user.IdUsuario = Input.PersonalId;
 
           await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
@@ -267,35 +299,33 @@ namespace SGMG.Areas.Identity.Pages.Account
             _logger.LogInformation("Usuario creado exitosamente: {Email} con IdUsuario: {IdUsuario}",
                 user.Email, user.IdUsuario);
 
-            // Asignar rol según el GUID seleccionado
             var roleName = RolesList.FirstOrDefault(r => r.Value == Input.RoleId)?.Text;
 
             if (!string.IsNullOrEmpty(roleName))
             {
-              // Verificar si el rol existe, si no, crearlo
               if (!await _roleManager.RoleExistsAsync(roleName))
               {
                 await _roleManager.CreateAsync(new IdentityRole(roleName));
-                _logger.LogInformation("Rol creado: {RoleName}", roleName);
               }
 
               await _userManager.AddToRoleAsync(user, roleName);
-              _logger.LogInformation("Rol {RoleName} asignado al usuario {Email}", roleName, user.Email);
             }
 
-            // Iniciar sesión inmediatamente
-            await _signInManager.SignInAsync(user, isPersistent: false);
+            // ✅ Mensaje de éxito persistente
+            TempData["SuccessMessage"] = "Usuario registrado exitosamente.";
 
             // Redirigir según el rol asignado
             return roleName switch
             {
-              "ADMINISTRADOR" => LocalRedirect("Identity/Account/Register"),
-              "MEDICO" => LocalRedirect("Identity/Account/Register"),
-              "ENFERMERIA" => LocalRedirect("Identity/Account/Register"),
-              "CAJERO" => LocalRedirect("Identity/Account/Register"),
+              "ADMINISTRADOR" => RedirectToPage("/Account/Register", new { area = "Identity" }),
+              "MEDICO" => RedirectToPage("/Account/Register", new { area = "Identity" }),
+              "ENFERMERIA" => RedirectToPage("/Account/Register", new { area = "Identity" }),
+              "CAJERO" => RedirectToPage("/Account/Register", new { area = "Identity" }),
+              "ADMISION" => RedirectToPage("/Account/Register", new { area = "Identity" }),
               _ => LocalRedirect(returnUrl)
             };
           }
+
 
           // Mostrar errores si falla la creación
           foreach (var error in result.Errors)

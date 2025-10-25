@@ -1,16 +1,26 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using SGMG.Models;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using Microsoft.CodeAnalysis.Elfie.Serialization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SGMG.Data;
+
 
 namespace SGMG.Controllers;
 
 public class HomeController : Controller
 {
   private readonly ILogger<HomeController> _logger;
+  private readonly ApplicationDbContext _context;
 
-  public HomeController(ILogger<HomeController> logger)
+  public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
   {
     _logger = logger;
+    _context = context;
   }
 
   public IActionResult Index()
@@ -89,6 +99,5 @@ public class HomeController : Controller
     Response.StatusCode = 404;
     return View();
   }
-
 
 }

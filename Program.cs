@@ -10,7 +10,14 @@ using SGMG.common.middleware;
 using PROY_20252SGMG.Repository;
 using PROY_20252SGMG.Services;
 using PROY_20252SGMG.Models;
+using NuGet.Packaging;
+using QuestPDF.Infrastructure;
 
+// QuestPDF.Settings.License = LicenseType.Community;
+// The installed QuestPDF package version does not contain LicenseType.Community.
+// If your QuestPDF version requires a license, set the appropriate value provided by that package
+// or register a license according to the QuestPDF documentation.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -46,6 +53,18 @@ builder.Services.AddControllersWithViews(options =>
   // Esta opción hace que los errores de tipo se agreguen al ModelState
   // en lugar de lanzar JsonException
 });
+builder.Services.ConfigureApplicationCookie(options =>
+{
+  options.LoginPath = "/Identity/Account/Login";
+  options.LogoutPath = "/Identity/Account/Logout";
+  options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+
+  // ✅ Agregar esta línea para redirigir después del logout
+  options.Events.OnSigningOut = async context =>
+  {
+    context.Response.Redirect("/Home/Index");
+  };
+});
 builder.Services.AddRazorPages();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -65,6 +84,7 @@ builder.Services.AddScoped<IPagoRepository, PagoRepository>();
 builder.Services.AddScoped<IDisponibilidadSemanalRepository, DisponibilidadSemanalRepositoryImpl>();
 builder.Services.AddScoped<ITriajeRepository, TriajeRepositoryImpl>();
 builder.Services.AddScoped<ICitaRepository, CitaRepositoryImpl>();
+builder.Services.AddScoped<IConsultaRepository, ConsultaRepositoryImpl>();
 
 
 
@@ -88,6 +108,7 @@ builder.Services.AddScoped<IHistorialClinicoService, HistorialClinicoService>();
 builder.Services.AddScoped<GlobalExceptionFilter>();
 builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddScoped<IRecetaService, RecetaService>();
+builder.Services.AddScoped<IConsultaService, ConsultaService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -114,6 +114,7 @@ public async Task<GenericResponse<Medico>> GetMedicoByUserIdAsync(string userId)
     {
       try
       {
+        _logger.LogInformation("Obteniendo médico con ID: {Id}", id);
         if (id <= 0)
           return new GenericResponse<Medico> { Success = false, Message = "El ID del médico no es válido.", Data = null };
         var medico = await _medicoRepository.GetMedicoByIdAsync(id);
