@@ -1,21 +1,19 @@
 ﻿@page
 @model LogoutModel
 @{
-    ViewData["Title"] = "Log out";
+    ViewData["Title"] = "Cerrar Sesión";
 }
 
-<header>
-    <h1>@ViewData["Title"]</h1>
-    @{
-        if (User.Identity?.IsAuthenticated ?? false)
-        {
-            <form asp-area="Identity" asp-page="/Account/Logout" method="post">
-    <button type="submit" class="nav-link btn btn-link text-dark">Cerrar sesión</button>
-</form>
-        }
-        else
-        {
-            <p>You have successfully logged out of the application.</p>
-        }
-    }
-</header>
+<div style="text-align: center; padding: 50px;">
+    <h3>Cerrando sesión...</h3>
+    <p>Serás redirigido en un momento.</p>
+</div>
+
+@section Scripts {
+    <script>
+        // Redirigir automáticamente si no se hace por el servidor
+        setTimeout(function() {
+            window.location.href = '/Home/Index';
+        }, 1000);
+    </script>
+}

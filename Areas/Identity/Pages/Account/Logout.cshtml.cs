@@ -1,6 +1,6 @@
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
+// ============================================
+// Archivo: Areas/Identity/Pages/Account/Logout.cshtml.cs
+// ============================================
 
 using System;
 using System.Threading.Tasks;
@@ -9,31 +9,38 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using SGMG.Models; // ✅ IMPORTANTE: Usar tu modelo ApplicationUser
+using PROY_20252SGMG.Models; // Asegúrate de que este namespace es correcto
 
 namespace SGMG.Areas.Identity.Pages.Account
 {
+  [AllowAnonymous]
   public class LogoutModel : PageModel
   {
-    private readonly SignInManager<IdentityUser> _signInManager;
+    private readonly SignInManager<ApplicationUser> _signInManager; // ✅ ApplicationUser, NO IdentityUser
     private readonly ILogger<LogoutModel> _logger;
 
-    public LogoutModel(SignInManager<IdentityUser> signInManager, ILogger<LogoutModel> logger)
+    public LogoutModel(
+        SignInManager<ApplicationUser> signInManager,
+        ILogger<LogoutModel> logger)
     {
       _signInManager = signInManager;
       _logger = logger;
     }
 
-    public async Task<IActionResult> OnPost()
+    public async Task<IActionResult> OnPost(string returnUrl = null)
     {
-      _logger.LogInformation("Inicio cierre de sesión");
       await _signInManager.SignOutAsync();
-      _logger.LogInformation("User logged out.");
+      _logger.LogInformation("Usuario cerró sesión exitosamente.");
 
-      return Redirect("/Home/Index"); // Redirige a la ruta absoluta
+      // ✅ Redirigir a /Home/Index después de cerrar sesión
+      return RedirectToAction("Index", "Home");
     }
 
-
-
-
+    public IActionResult OnGet()
+    {
+      // Si alguien intenta acceder por GET, cerrar sesión de todas formas
+      return RedirectToAction("Index", "Home");
+    }
   }
 }

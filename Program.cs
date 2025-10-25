@@ -46,6 +46,18 @@ builder.Services.AddControllersWithViews(options =>
   // Esta opción hace que los errores de tipo se agreguen al ModelState
   // en lugar de lanzar JsonException
 });
+builder.Services.ConfigureApplicationCookie(options =>
+{
+  options.LoginPath = "/Identity/Account/Login";
+  options.LogoutPath = "/Identity/Account/Logout";
+  options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+
+  // ✅ Agregar esta línea para redirigir después del logout
+  options.Events.OnSigningOut = async context =>
+  {
+    context.Response.Redirect("/Home/Index");
+  };
+});
 builder.Services.AddRazorPages();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
