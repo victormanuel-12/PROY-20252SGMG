@@ -130,5 +130,36 @@ namespace SGMG.Controllers
     {
       return await _triajeService.GetAllTriajesAsync();
     }
+    [HttpGet]
+    [Route("/citas/pendientesportriage")]
+    public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> GetCitasPagadasPorUsuarioLogueado()
+    {
+      try
+      {
+        // Obtener el ID del usuario logueado
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+          return new GenericResponse<IEnumerable<CitaResponseDTO>>(false, "Usuario no autenticado");
+        }
+
+        // Buscar la enfermera por el ID del usuario
+        var enfermera = await _context.Enfermerias
+            .FirstOrDefaultAsync(e => e.IdEnfermeria.ToString() == user.IdUsuario);
+
+        if (enfermera == null)
+        {
+          return new GenericResponse<IEnumerable<CitaResponseDTO>>(false, "Enfermera no encontrada");
+        }
+
+        // Llamar al servicio con el ID de la enfermera
+        return await _triajeService.GetCitasPagadasPorConsultorioEnfermeraAsync(enfermera.IdEnfermeria);
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError($"Error en GetCitasPagadasPorUsuarioLogueado: {ex.Message}");
+        return new GenericResponse<IEnumerable<CitaResponseDTO>>(false, $"Error: {ex.Message}");
+      }
+    }
   }
 }
