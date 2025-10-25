@@ -222,26 +222,24 @@ namespace SGMG.Services.ServiceImpl
         var idsPacientes = triajes.Select(t => t.IdPaciente).Distinct().ToList();
 
         // Traer TODAS las citas "Triadas" de esos pacientes en UNA sola consulta
-        var citasTriadas = await _context.Citas
-            .Include(c => c.Medico)
-            .Where(c => idsPacientes.Contains(c.IdPaciente) && c.EstadoCita == "Triada")
-            .ToListAsync();
+        var citasPagadas = await _context.Citas
+        .Include(c => c.Medico)
+        .Where(c => idsPacientes.Contains(c.IdPaciente) &&
+                    c.EstadoCita == "Pagado" &&           // ✅ Estado Pagado
+                    c.IdTriage != null)                   // ✅ Tiene triaje
+        .ToListAsync();
 
-        // Agrupar citas por IdPaciente para búsqueda rápida
-        var citasPorPaciente = citasTriadas
-            .GroupBy(c => c.IdPaciente)
-            .ToDictionary(
-                g => g.Key,
-                g => g.OrderByDescending(c => c.FechaCita)
-                       .ThenByDescending(c => c.HoraCita)
-                       .First()
-            );
+
 
         // Mapear a DTO
         var triajesDTO = triajes.Select(t =>
         {
           // Buscar la cita del paciente (ya está en memoria)
-          citasPorPaciente.TryGetValue(t.IdPaciente, out var cita);
+          var cita = citasPagadas
+              .Where(c => c.IdPaciente == t.IdPaciente)
+              .OrderByDescending(c => c.FechaCita)
+              .ThenByDescending(c => c.HoraCita)
+              .FirstOrDefault();
 
           return new TriajeResponseDTO
           {
