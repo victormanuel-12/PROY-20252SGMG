@@ -65,6 +65,7 @@ builder.Services.AddScoped<IPagoRepository, PagoRepository>();
 builder.Services.AddScoped<IDisponibilidadSemanalRepository, DisponibilidadSemanalRepositoryImpl>();
 builder.Services.AddScoped<ITriajeRepository, TriajeRepositoryImpl>();
 builder.Services.AddScoped<ICitaRepository, CitaRepositoryImpl>();
+builder.Services.AddScoped<IConsultaRepository, ConsultaRepositoryImpl>();
 
 
 
@@ -88,6 +89,7 @@ builder.Services.AddScoped<IHistorialClinicoService, HistorialClinicoService>();
 builder.Services.AddScoped<GlobalExceptionFilter>();
 builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddScoped<IRecetaService, RecetaService>();
+builder.Services.AddScoped<IConsultaService, ConsultaService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
