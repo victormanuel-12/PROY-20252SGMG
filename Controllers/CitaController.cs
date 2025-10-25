@@ -47,21 +47,21 @@ namespace SGMG.Controllers
     {
       return await _citaService.GetCitasFueraHorarioAsync();
     }
-    
+
     //Buscar citas pendientes con filtros   
     [HttpGet]
     [Route("/citas/buscar-pendientes")]
-    public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> BuscarCitasPendientes([FromQuery] string? tipoDoc,[FromQuery] string? numeroDoc)
+    public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> BuscarCitasPendientes([FromQuery] string? tipoDoc, [FromQuery] string? numeroDoc)
     {
       return await _citaService.BuscarCitasPendientesAsync(tipoDoc, numeroDoc);
     }
 
     [HttpGet]
     [Route("/citas/buscar-fuera-horario")]
-    public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> BuscarCitasFueraHorario([FromQuery] string? tipoDoc,[FromQuery] string? numeroDoc)
+    public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> BuscarCitasFueraHorario([FromQuery] string? tipoDoc, [FromQuery] string? numeroDoc)
     {
       return await _citaService.BuscarCitasFueraHorarioAsync(tipoDoc, numeroDoc);
-    }     
+    }
 
     [HttpGet]
     [Route("/citas/all")]
@@ -69,7 +69,7 @@ namespace SGMG.Controllers
     {
       return await _citaService.GetAllCitasAsync();
     }
-        
+
 
     [HttpGet]
     [Route("/citas/{id}")]
@@ -380,11 +380,13 @@ namespace SGMG.Controllers
           IdPaciente = datos.IdPaciente,
           IdMedico = datos.IdMedico,
           Especialidad = "Medicina General",
-          FechaCita = DateTime.Parse(datos.FechaCita),
+          FechaCita = DateTime.Parse(datos.FechaCita).Date,
           HoraCita = horaCita,
           Consultorio = medico.ConsultorioAsignado?.Nombre ?? "Consultorio A",
-          EstadoCita = "Reservada",
-          FechaRegistro = DateTime.Now
+          EstadoCita = "Pendiente",
+          FechaRegistro = DateTime.Now.Date
+
+
         };
         _logger.LogInformation($"✅ Registro de cita creado en memoria");
         _logger.LogInformation($"   → Fecha: {nuevaCita.FechaCita:yyyy-MM-dd}");

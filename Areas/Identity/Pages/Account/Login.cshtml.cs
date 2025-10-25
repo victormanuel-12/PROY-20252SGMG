@@ -133,6 +133,8 @@ namespace SGMG.Areas.Identity.Pages.Account
               return LocalRedirect("/triaje/listado");
             else if (roles.Contains("CAJERO"))
               return LocalRedirect("/Home/Historial");
+            else if (roles.Contains("ADMISION"))
+              return LocalRedirect("/Home/paciente");
           }
 
           // Si no tiene rol asignado o no coincide, redirigir a returnUrl
