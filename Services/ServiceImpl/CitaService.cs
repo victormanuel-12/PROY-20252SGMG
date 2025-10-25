@@ -222,5 +222,100 @@ namespace SGMG.Services.ServiceImpl
             }
         }
 
+                            // NUEVOS MÉTODOS para médicos
+public async Task<GenericResponse<IEnumerable<CitaPorAtenderDTO>>> GetCitasPorAtenderAsync(int idMedico, DateTime fecha, string consultorio)
+{
+    try
+    {
+        // Obtener las citas sin ordenar por TimeSpan
+        var citas = await _context.Citas
+            .Include(c => c.Paciente)
+            .Include(c => c.Medico)
+            .Where(c => c.IdMedico == idMedico &&
+                       c.FechaCita.Date == fecha.Date &&
+                       c.Consultorio == consultorio &&
+                       (c.EstadoCita == "Programada" || c.EstadoCita == "Confirmada" || c.EstadoCita == "Reservada"))
+            .ToListAsync(); // Primero obtener los datos
+
+        // CORREGIDO: Ordenar en memoria por HoraCita
+        var citasOrdenadas = citas
+            .OrderBy(c => c.HoraCita)
+            .ToList();
+
+        var citasDTO = citasOrdenadas.Select(c => new CitaPorAtenderDTO
+        {
+            IdCita = c.IdCita,
+            IdPaciente = c.IdPaciente,
+            NumeroDocumento = c.Paciente?.NumeroDocumento ?? "",
+            TipoDocumento = c.Paciente?.TipoDocumento ?? "",
+            NombreCompleto = c.Paciente != null ? 
+                $"{c.Paciente.Nombre} {c.Paciente.ApellidoPaterno} {c.Paciente.ApellidoMaterno}".Trim() : "",
+            Sexo = c.Paciente?.Sexo ?? "",
+            Edad = c.Paciente?.Edad ?? 0,
+            FechaCita = c.FechaCita,
+            HoraCita = c.HoraCita,
+            Consultorio = c.Consultorio,
+            EstadoCita = c.EstadoCita,
+            FechaRegistro = c.FechaRegistro,
+            Especialidad = c.Especialidad
+        }).ToList();
+
+        return new GenericResponse<IEnumerable<CitaPorAtenderDTO>>
+        {
+            Success = true,
+            Message = $"Se encontraron {citasDTO.Count} citas por atender",
+            Data = citasDTO
+        };
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error al obtener citas por atender para médico {MedicoId}", idMedico);
+        return new GenericResponse<IEnumerable<CitaPorAtenderDTO>>
+        {
+            Success = false,
+            Message = $"Error al obtener citas: {ex.Message}"
+        };
+    }
+}
+
+public async Task<GenericResponse<IEnumerable<CitaPorAtenderDTO>>> GetCitasPorAtenderFiltradasAsync(int idMedico, DateTime fecha, string consultorio, string filtro)
+{
+    try
+    {
+        var citasResponse = await GetCitasPorAtenderAsync(idMedico, fecha, consultorio);
+        
+        // CORREGIDO: Usar GetValueOrDefault() para bool?
+        if (!citasResponse.Success.GetValueOrDefault())
+            return citasResponse;
+
+        var citas = citasResponse.Data;
+
+        if (!string.IsNullOrEmpty(filtro))
+        {
+            citas = citas.Where(c => 
+                c.NumeroDocumento.Contains(filtro) ||
+                c.NombreCompleto.ToLower().Contains(filtro.ToLower()) ||
+                c.TipoDocumento.ToLower().Contains(filtro.ToLower())
+            ).ToList();
+        }
+
+        return new GenericResponse<IEnumerable<CitaPorAtenderDTO>>
+        {
+            Success = true,
+            Message = $"Se encontraron {citas.Count()} citas filtradas",
+            Data = citas
+        };
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error al filtrar citas por atender");
+        return new GenericResponse<IEnumerable<CitaPorAtenderDTO>>
+        {
+            Success = false,
+            Message = $"Error al filtrar citas: {ex.Message}"
+        };
+    }
+}
+
     }
 }

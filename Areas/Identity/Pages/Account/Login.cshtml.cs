@@ -128,7 +128,7 @@ namespace SGMG.Areas.Identity.Pages.Account
             if (roles.Contains("ADMINISTRADOR"))
               return LocalRedirect("/Home/Personal");
             else if (roles.Contains("MEDICO"))
-              return LocalRedirect("/Medico/Home");
+              return LocalRedirect("/medico/pacientes-por-atender");
             else if (roles.Contains("ENFERMERIA"))
               return LocalRedirect("/triaje/listado");
             else if (roles.Contains("CAJERO"))
