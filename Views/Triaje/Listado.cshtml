@@ -9,22 +9,32 @@
 
 <div class="page-container">
     <div class="page-title-container">
-      <div class="bienvenida-card">
-    @if (ViewData["NombreEnfermera"] != null)
-    {
-        var nombre = ViewData["NombreEnfermera"].ToString();
-        var genero = ViewData["GeneroEnfermera"]?.ToString(); // "F" o "M"
-        var saludo = genero == "F" ? "Bienvenida" : "Bienvenido";
-        var icono = genero == "F" ? "👩‍⚕️" : "👨‍⚕️";
+        <div class="bienvenida-card">
+            @if (ViewData["NombreEnfermera"] != null)
+            {
+                var nombre = ViewData["NombreEnfermera"].ToString();
+                var genero = ViewData["GeneroEnfermera"]?.ToString(); // "F" o "M"
+                var saludo = genero == "F" ? "Bienvenida" : "Bienvenido";
+                var icono = genero == "F" ? "👩‍⚕️" : "👨‍⚕️";
+                var consultorioInfo = ViewData["ConsultorioInfo"]?.ToString();
 
-        <div class="bienvenida-contenido">
-            <div class="bienvenida-texto">
-                <span class="bienvenida-saludo">@saludo</span>  
-                <span class="bienvenida-nombre">@nombre</span>  
-                <span class="bienvenida-icono">@icono</span>
-            </div>
+                <div class="bienvenida-contenido">
+                    <div class="bienvenida-texto">
+                        <span class="bienvenida-saludo">@saludo</span>  
+                        <span class="bienvenida-nombre">@nombre</span>  
+                        <span class="bienvenida-icono">@icono</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(consultorioInfo))
+                    {
+                        <div class="consultorio-info">
+                            <i class="fas fa-door-open"></i>
+                            <span>@consultorioInfo</span>
+                        </div>
+                    }
+                </div>
+            }
         </div>
-    }
+    </div>
 </div>
 
 

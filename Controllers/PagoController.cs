@@ -18,13 +18,15 @@ namespace SGMG.Controllers
     private readonly IPagoRepository _pagoRepository;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<PagoController> _logger;
+    private readonly ICitaRepository _citaRepository;
 
-    public PagoController(IPagoService pagoService, IPagoRepository pagoRepository, ApplicationDbContext context, ILogger<PagoController> logger)
+    public PagoController(IPagoService pagoService, IPagoRepository pagoRepository, ApplicationDbContext context, ILogger<PagoController> logger, ICitaRepository citaRepository)
     {
       _pagoService = pagoService;
       _pagoRepository = pagoRepository;
       _context = context;
       _logger = logger;
+      _citaRepository = citaRepository;
     }
 
     [HttpGet]
@@ -93,7 +95,7 @@ namespace SGMG.Controllers
           return NotFound();
         }
 
-        _logger.LogInformation($"Cita encontrada: ID={cita.IdCita}, Paciente={cita.Paciente?.NumeroDocumento}");
+        _logger.LogInformation($"Cita encontrada: ID={cita.IdCita}, Paciente={cita.Paciente?.NumeroDocumento}, Estado actual: {cita.EstadoCita}");
         _logger.LogInformation($"Cantidad de pagos asociados: {cita.Pagos?.Count ?? 0}");
 
         // Verificar si ya tiene un pago
@@ -111,7 +113,13 @@ namespace SGMG.Controllers
 
             if (actualizado)
             {
+              // ACTUALIZAR EL ESTADO DE LA CITA A "Pagado"
+              cita.EstadoCita = "Pagado";
+              _context.Citas.Update(cita);
+              _context.SaveChanges();
+
               _logger.LogInformation($"✅ Pago ID={pagoExistente.IdPago} actualizado a Pagado exitosamente");
+              _logger.LogInformation($"✅ Estado de cita actualizado a: {cita.EstadoCita}");
               TempData["Success"] = "Pago procesado exitosamente";
             }
             else
@@ -146,11 +154,17 @@ namespace SGMG.Controllers
           };
 
           _context.Pagos.Add(nuevoPago);
+
+          // ACTUALIZAR EL ESTADO DE LA CITA A "Pagado"
+          cita.EstadoCita = "Pagado";
+          _context.Citas.Update(cita);
+
           var filasAfectadas = _context.SaveChanges();
 
           if (filasAfectadas > 0)
           {
             _logger.LogInformation($"✅ Nuevo pago creado exitosamente: ID={nuevoPago.IdPago}, Total={nuevoPago.Total}");
+            _logger.LogInformation($"✅ Estado de cita actualizado a: {cita.EstadoCita}");
             TempData["Success"] = "Pago creado y procesado exitosamente";
           }
           else

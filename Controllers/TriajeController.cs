@@ -81,6 +81,11 @@ namespace SGMG.Controllers
           ViewData["NombreEnfermera"] = nombreCompleto;
           ViewData["NumeroColegiaturaEnfermeria"] = enfermera.NumeroColegiaturaEnfermeria;
           ViewData["NivelProfesional"] = enfermera.NivelProfesional;
+          ViewData["IdEnfermeria"] = enfermera.IdEnfermeria;
+          ViewData["IdPersonal"] = enfermera.IdConsultorio;
+
+          ViewData["ConsultorioInfo"] = $"Consultorio {enfermera.IdConsultorio}";
+
         }
       }
     }
