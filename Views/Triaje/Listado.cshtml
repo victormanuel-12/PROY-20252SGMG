@@ -9,15 +9,13 @@
 
 <div class="page-container">
     <div class="page-title-container">
-       <div class="bienvenida-card">
+      <div class="bienvenida-card">
     @if (ViewData["NombreEnfermera"] != null)
     {
-        @{
-            var nombre = ViewData["NombreEnfermera"].ToString();
-            var genero = ViewData["GeneroEnfermera"]?.ToString(); // "F" o "M"
-            var saludo = genero == "F" ? "Bienvenida" : "Bienvenido";
-            var icono = genero == "F" ? "👩‍⚕️" : "👨‍⚕️";
-        }
+        var nombre = ViewData["NombreEnfermera"].ToString();
+        var genero = ViewData["GeneroEnfermera"]?.ToString(); // "F" o "M"
+        var saludo = genero == "F" ? "Bienvenida" : "Bienvenido";
+        var icono = genero == "F" ? "👩‍⚕️" : "👨‍⚕️";
 
         <div class="bienvenida-contenido">
             <div class="bienvenida-texto">
@@ -28,6 +26,7 @@
         </div>
     }
 </div>
+
 
 
 
