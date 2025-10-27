@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", function () {
 function initializePacienteEvents() {
   const searchForm = document.getElementById("searchPacienteForm");
   const clearBtn = document.getElementById("clearPacienteBtn");
-  const addBtn = document.getElementById("addPacienteBtn");
 
   if (searchForm) {
     searchForm.addEventListener("submit", handlePacienteSearch);
@@ -23,18 +22,12 @@ function initializePacienteEvents() {
 // Cargar resumen de pacientes
 async function loadResumenPacientes() {
   try {
-    // Aquí puedes ajustar el endpoint para traer el resumen real
-    // Ejemplo de datos simulados:
     const data = {
       totalPacientes: 0,
       hombres: 0,
       mujeres: 0,
       registradosHoy: 0,
     };
-    // Si tienes endpoint real, reemplaza por fetch
-    // const res = await fetch(`${API_BASE_URL}/pacientes/resumen`);
-    // const data = await res.json();
-
     renderSummaryCardsPaciente(data);
   } catch (error) {
     showAlert("Error al cargar el resumen de pacientes.", "error");
@@ -46,27 +39,27 @@ function renderSummaryCardsPaciente(data) {
   const container = document.getElementById("summaryCardsPaciente");
   if (!container) return;
   container.innerHTML = `
-        <div class="summary-card">
-            <div class="card-icon blue"><i class="fas fa-users"></i></div>
-            <div class="card-value">${data.totalPacientes ?? 0}</div>
-            <div class="card-label">Total Pacientes</div>
-        </div>
-        <div class="summary-card">
-            <div class="card-icon green"><i class="fas fa-mars"></i></div>
-            <div class="card-value">${data.hombres ?? 0}</div>
-            <div class="card-label">Hombres</div>
-        </div>
-        <div class="summary-card">
-            <div class="card-icon purple"><i class="fas fa-venus"></i></div>
-            <div class="card-value">${data.mujeres ?? 0}</div>
-            <div class="card-label">Mujeres</div>
-        </div>
-        <div class="summary-card">
-            <div class="card-icon orange"><i class="fas fa-calendar-day"></i></div>
-            <div class="card-value">${data.registradosHoy ?? 0}</div>
-            <div class="card-label">Registrados Hoy</div>
-        </div>
-    `;
+    <div class="summary-card">
+        <div class="card-icon blue"><i class="fas fa-users"></i></div>
+        <div class="card-value">${data.totalPacientes ?? 0}</div>
+        <div class="card-label">Total Pacientes</div>
+    </div>
+    <div class="summary-card">
+        <div class="card-icon green"><i class="fas fa-mars"></i></div>
+        <div class="card-value">${data.hombres ?? 0}</div>
+        <div class="card-label">Hombres</div>
+    </div>
+    <div class="summary-card">
+        <div class="card-icon purple"><i class="fas fa-venus"></i></div>
+        <div class="card-value">${data.mujeres ?? 0}</div>
+        <div class="card-label">Mujeres</div>
+    </div>
+    <div class="summary-card">
+        <div class="card-icon orange"><i class="fas fa-calendar-day"></i></div>
+        <div class="card-value">${data.registradosHoy ?? 0}</div>
+        <div class="card-label">Registrados Hoy</div>
+    </div>
+  `;
 }
 
 // Manejar búsqueda de pacientes
@@ -79,7 +72,6 @@ async function handlePacienteSearch(e) {
     .getElementById("numeroDocumento")
     .value.trim();
 
-  // Validación simple
   let hasError = false;
   if (!tipoDocumento) {
     displayPacienteFieldError(
@@ -98,7 +90,6 @@ async function handlePacienteSearch(e) {
   if (hasError) return;
 
   try {
-    // Usar el nuevo endpoint de búsqueda
     const res = await fetch(
       `${API_BASE_URL}/pacientes/search?tipoDocumento=${encodeURIComponent(
         tipoDocumento
@@ -108,22 +99,24 @@ async function handlePacienteSearch(e) {
 
     if (!result.success || !result.data) {
       renderPacienteTable([]);
-      renderCitasPendientesTable([]); // Limpiar citas
+      renderCitasPendientesTable([]);
+      renderDerivacionesTable([]);
       showAlert(result.message || "No se encontró ningún paciente.", "info");
       return;
     }
 
-    // Renderizar paciente encontrado
     renderPacienteTable([result.data]);
     showAlert(result.message || "Paciente encontrado.", "success");
 
-    // Cargar citas pendientes del paciente
-    await loadCitasPendientes(result.data.IdPaciente || result.data.idPaciente);
+    const idPaciente = result.data.IdPaciente || result.data.idPaciente;
+    await loadCitasPendientes(idPaciente);
+    await loadDerivaciones(idPaciente);
   } catch (error) {
     console.error("Error:", error);
     showAlert("Error al buscar pacientes.", "error");
   }
 }
+
 // Renderizar tabla de pacientes
 function renderPacienteTable(data) {
   const tbody = document.getElementById("pacienteTableBody");
@@ -191,11 +184,10 @@ function renderPacienteTable(data) {
     )
     .join("");
 }
+
 function solicitarCita(idPaciente) {
   console.log("Solicitar cita para paciente ID:", idPaciente);
-
   if (idPaciente) {
-    // Redirigir a VisualCitas con el ID del paciente como parámetro
     const url = `/Home/VisualCitas?idPaciente=${encodeURIComponent(
       idPaciente
     )}`;
@@ -206,18 +198,6 @@ function solicitarCita(idPaciente) {
     alert("Error: No se pudo identificar al paciente");
   }
 }
-/* // Calcular edad (puedes ajustar según tu modelo)
-function calcularEdad(fechaNacimiento) {
-    if (!fechaNacimiento) return "-";
-    const nacimiento = new Date(fechaNacimiento);
-    const hoy = new Date();
-    let edad = hoy.getFullYear() - nacimiento.getFullYear();
-    const m = hoy.getMonth() - nacimiento.getMonth();
-    if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
-        edad--;
-    }
-    return `${edad} años`;
-} */
 
 // Mostrar errores de campo
 function displayPacienteFieldError(field, message) {
@@ -242,10 +222,12 @@ function clearPacienteFilters() {
   document.getElementById("numeroDocumento").value = "";
   clearPacienteErrors();
   renderPacienteTable([]);
-  renderCitasPendientesTable([]); // Limpiar también las citas
+  renderCitasPendientesTable([]);
+  renderDerivacionesTable([]);
   const addHistoriaSection = document.getElementById("addHistoriaSection");
   if (addHistoriaSection) addHistoriaSection.style.display = "none";
 }
+
 // Mostrar alertas
 function showAlert(message, type = "success") {
   const alertContainer = document.getElementById("alertContainer");
@@ -253,9 +235,9 @@ function showAlert(message, type = "success") {
   const alert = document.createElement("div");
   alert.className = `alert alert-${type}`;
   alert.innerHTML = `
-        <span>${message}</span>
-        <button class="alert-close" onclick="this.parentElement.remove()">×</button>
-    `;
+    <span>${message}</span>
+    <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+  `;
   alertContainer.appendChild(alert);
   setTimeout(() => alert.remove(), 4000);
 }
@@ -300,18 +282,169 @@ function renderCitasPendientesTable(citas) {
       const estadoClass = getEstadoClass(estado);
 
       return `
-            <tr>
-                <td>${c.tipoDocumento || ""}</td>
-                <td>${c.numeroDocumento || ""}</td>
-                <td>${c.nombreCompletoPaciente || ""}</td>
-                <td>${fechaFormateada}</td>
-                <td>${horaFormateada}</td>
-                <td><span class="estado-pill ${estadoClass}">${estado}</span></td>
-                <td>${c.nombreCompletoMedico || ""}</td>
-            </tr>
-        `;
+        <tr>
+            <td>${c.tipoDocumento || ""}</td>
+            <td>${c.numeroDocumento || ""}</td>
+            <td>${c.nombreCompletoPaciente || ""}</td>
+            <td>${fechaFormateada}</td>
+            <td>${horaFormateada}</td>
+            <td><span class="estado-pill ${estadoClass}">${estado}</span></td>
+            <td>${c.nombreCompletoMedico || ""}</td>
+        </tr>
+      `;
     })
     .join("");
+}
+
+// Cargar derivaciones de un paciente
+async function loadDerivaciones(idPaciente) {
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/pacientes/${idPaciente}/derivaciones`
+    );
+    const result = await res.json();
+
+    if (!result.success || !result.data) {
+      renderDerivacionesTable([]);
+      return;
+    }
+
+    renderDerivacionesTable(result.data);
+  } catch (error) {
+    console.error("Error al cargar derivaciones:", error);
+    renderDerivacionesTable([]);
+  }
+}
+
+// Renderizar tabla de derivaciones
+function renderDerivacionesTable(derivaciones) {
+  const tbody = document.getElementById("derivacionesBody");
+  if (!tbody) return;
+
+  if (!derivaciones || derivaciones.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="no-data">No hay derivaciones.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = derivaciones
+    .map((d) => {
+      const fechaFormateada = d.fechaDerivacion
+        ? new Date(d.fechaDerivacion).toLocaleDateString("es-PE")
+        : "-";
+      const estado = d.estadoDerivacion || "Sin Estado";
+      const estadoClass = getEstadoClass(estado);
+
+      return `
+        <tr>
+            <td>${d.tipoDocumento || ""}</td>
+            <td>${d.numeroDocumento || ""}</td>
+            <td>${d.medicoSolicitante || ""}</td>
+            <td>${d.especialidadDestino || ""}</td>
+            <td>${fechaFormateada}</td>
+            <td><span class="estado-pill ${estadoClass}">${estado}</span></td>
+            <td>
+                <button class="btn-detalle" onclick="toggleDetalleDerivacion(${
+                  d.idDerivacion
+                })" id="btnDetalle${d.idDerivacion}">
+                    <i class="fas fa-eye"></i>
+                    Ver detalles
+                </button>
+            </td>
+        </tr>
+        <tr id="detalleRow${d.idDerivacion}" style="display: none;">
+            <td colspan="7">
+                <div class="derivacion-detalle" id="detalle${d.idDerivacion}">
+                    <h4 style="margin-top: 0; color: #007bff; font-size: 16px; margin-bottom: 15px;">
+                        <i class="fas fa-file-medical"></i>
+                        Detalles de la Derivación #${d.idDerivacion}
+                    </h4>
+                    <div class="detalle-grid">
+                        <div class="detalle-item">
+                            <span class="detalle-label">Paciente</span>
+                            <span class="detalle-value">${
+                              d.nombreCompletoPaciente || ""
+                            }</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Médico Solicitante</span>
+                            <span class="detalle-value">${
+                              d.medicoSolicitante || ""
+                            }</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Tipo Documento</span>
+                            <span class="detalle-value">${
+                              d.tipoDocumento || ""
+                            }</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Nro. Documento</span>
+                            <span class="detalle-value">${
+                              d.numeroDocumento || ""
+                            }</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Nro. Documento Médico</span>
+                            <span class="detalle-value">${
+                              d.numeroDocumentoMedico || ""
+                            }</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Especialidad Solicitante</span>
+                            <span class="detalle-value">${
+                              d.especialidadSolicitante || ""
+                            }</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Servicio Origen</span>
+                            <span class="detalle-value">${
+                              d.servicioOrigen || ""
+                            }</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Especialidad Destino</span>
+                            <span class="detalle-value">${
+                              d.especialidadDestino || ""
+                            }</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Fecha de Solicitud</span>
+                            <span class="detalle-value">${fechaFormateada}</span>
+                        </div>
+                        <div class="detalle-item detalle-motivo">
+                            <span class="detalle-label">Motivo de la Derivación</span>
+                            <span class="detalle-value">${
+                              d.motivoDerivacion || ""
+                            }</span>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+// Toggle detalles de derivación
+function toggleDetalleDerivacion(idDerivacion) {
+  const detalleRow = document.getElementById(`detalleRow${idDerivacion}`);
+  const detalle = document.getElementById(`detalle${idDerivacion}`);
+  const btn = document.getElementById(`btnDetalle${idDerivacion}`);
+
+  if (!detalleRow || !detalle || !btn) return;
+
+  if (detalleRow.style.display === "none") {
+    detalleRow.style.display = "table-row";
+    detalle.classList.add("show");
+    btn.classList.add("active");
+    btn.innerHTML = '<i class="fas fa-eye-slash"></i> Ocultar detalles';
+  } else {
+    detalleRow.style.display = "none";
+    detalle.classList.remove("show");
+    btn.classList.remove("active");
+    btn.innerHTML = '<i class="fas fa-eye"></i> Ver detalles';
+  }
 }
 
 // Obtener clase CSS para el estado
@@ -323,6 +456,7 @@ function getEstadoClass(estado) {
   switch (estadoNormalizado) {
     case "confirmada":
     case "activo":
+    case "atendida":
       return "estado-activo";
     case "pendiente":
       return "estado-pendiente";

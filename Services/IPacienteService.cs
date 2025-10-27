@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using PROY_20252SGMG.Dtos.Response;
 using SGMG.Dtos.Request.Paciente;
 using SGMG.Dtos.Response;
 using SGMG.Models;
+
 
 namespace SGMG.Services
 {
@@ -17,5 +19,6 @@ namespace SGMG.Services
     Task<GenericResponse<Paciente>> AddPacienteAsync(PacienteRequestDTO pacienteRequestDTO);
     Task<GenericResponse<Paciente>> UpdatePacienteAsync(PacienteRequestDTO pacienteRequestDTO);
     Task<GenericResponse<Paciente>> DeletePacienteAsync(int id);
+    Task<GenericResponse<IEnumerable<DerivacionResponseDTO>>> GetDerivacionesByPacienteAsync(int idPaciente);
   }
 }

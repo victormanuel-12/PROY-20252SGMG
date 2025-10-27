@@ -8,6 +8,8 @@ using SGMG.Repository;
 using SGMG.common.exception;
 using SGMG.Dtos.Request.Paciente;
 
+using PROY_20252SGMG.Dtos.Response;
+
 
 namespace SGMG.Services.ServiceImpl
 {
@@ -62,28 +64,28 @@ namespace SGMG.Services.ServiceImpl
       try
       {
         if (idPaciente <= 0)
-            return new GenericResponse<IEnumerable<CitaResponseDTO>>(false, "El ID del paciente no es válido.");
+          return new GenericResponse<IEnumerable<CitaResponseDTO>>(false, "El ID del paciente no es válido.");
 
         var citas = await _pacienteRepository.GetCitasPendientesByPacienteAsync(idPaciente);
-        
+
         if (citas == null || !citas.Any())
-            return new GenericResponse<IEnumerable<CitaResponseDTO>>(false, "No hay citas pendientes para este paciente.");
+          return new GenericResponse<IEnumerable<CitaResponseDTO>>(false, "No hay citas pendientes para este paciente.");
 
         // Mapear a DTO para evitar ciclos de referencia
         var citasDTO = citas.Select(c => new CitaResponseDTO
         {
-            IdCita = c.IdCita,
-            IdPaciente = c.IdPaciente,
-            IdMedico = c.IdMedico,
-            Especialidad = c.Especialidad,
-            FechaCita = c.FechaCita,
-            HoraCita = c.HoraCita,
-            Consultorio = c.Consultorio,
-            EstadoCita = c.EstadoCita,
-            TipoDocumento = c.Paciente?.TipoDocumento ?? "",
-            NumeroDocumento = c.Paciente?.NumeroDocumento ?? "",
-            NombreCompletoPaciente = $"{c.Paciente?.ApellidoPaterno ?? ""} {c.Paciente?.ApellidoMaterno ?? ""}, {c.Paciente?.Nombre ?? ""}",
-            NombreCompletoMedico = $"{c.Medico?.Nombre ?? ""} {c.Medico?.ApellidoPaterno ?? ""}"
+          IdCita = c.IdCita,
+          IdPaciente = c.IdPaciente,
+          IdMedico = c.IdMedico,
+          Especialidad = c.Especialidad,
+          FechaCita = c.FechaCita,
+          HoraCita = c.HoraCita,
+          Consultorio = c.Consultorio,
+          EstadoCita = c.EstadoCita,
+          TipoDocumento = c.Paciente?.TipoDocumento ?? "",
+          NumeroDocumento = c.Paciente?.NumeroDocumento ?? "",
+          NombreCompletoPaciente = $"{c.Paciente?.ApellidoPaterno ?? ""} {c.Paciente?.ApellidoMaterno ?? ""}, {c.Paciente?.Nombre ?? ""}",
+          NombreCompletoMedico = $"{c.Medico?.Nombre ?? ""} {c.Medico?.ApellidoPaterno ?? ""}"
         }).ToList();
 
         return new GenericResponse<IEnumerable<CitaResponseDTO>>(true, citasDTO, "Citas pendientes obtenidas correctamente.");
@@ -165,6 +167,43 @@ namespace SGMG.Services.ServiceImpl
       catch (Exception ex)
       {
         return new GenericResponse<Paciente>(false, $"Error al eliminar al paciente con ID: {id}: {ex.Message}");
+      }
+    }
+    public async Task<GenericResponse<IEnumerable<DerivacionResponseDTO>>> GetDerivacionesByPacienteAsync(int idPaciente)
+    {
+      try
+      {
+        if (idPaciente <= 0)
+          return new GenericResponse<IEnumerable<DerivacionResponseDTO>>(false, "El ID del paciente no es válido.");
+
+        var derivaciones = await _pacienteRepository.GetDerivacionesByPacienteAsync(idPaciente);
+
+        if (derivaciones == null || !derivaciones.Any())
+          return new GenericResponse<IEnumerable<DerivacionResponseDTO>>(false, "No hay derivaciones para este paciente.");
+
+        // Mapear a DTO
+        var derivacionesDTO = derivaciones.Select(d => new DerivacionResponseDTO
+        {
+          IdDerivacion = d.IdDerivacion,
+          IdCitaOrigen = d.IdCitaOrigen,
+          TipoDocumento = d.Cita?.Paciente?.TipoDocumento ?? "",
+          NumeroDocumento = d.Cita?.Paciente?.NumeroDocumento ?? "",
+          NombreCompletoPaciente = $"{d.Cita?.Paciente?.ApellidoPaterno ?? ""} {d.Cita?.Paciente?.ApellidoMaterno ?? ""}, {d.Cita?.Paciente?.Nombre ?? ""}",
+          MedicoSolicitante = $"Dr. {d.Cita?.Medico?.Nombre ?? ""} {d.Cita?.Medico?.ApellidoPaterno ?? ""}",
+          EspecialidadDestino = d.EspecialidadDestino,
+          MotivoDerivacion = d.MotivoDerivacion,
+          FechaDerivacion = d.FechaDerivacion,
+          EstadoDerivacion = d.EstadoDerivacion,
+          ServicioOrigen = d.Cita?.Especialidad ?? "",
+          NumeroDocumentoMedico = d.Cita?.Medico?.NumeroDni ?? "",
+          EspecialidadSolicitante = d.Cita?.Medico?.CargoMedico ?? ""
+        }).ToList();
+
+        return new GenericResponse<IEnumerable<DerivacionResponseDTO>>(true, derivacionesDTO, "Derivaciones obtenidas correctamente.");
+      }
+      catch (Exception ex)
+      {
+        throw new GenericException($"Error al obtener derivaciones del paciente con ID: {idPaciente}", ex);
       }
     }
 

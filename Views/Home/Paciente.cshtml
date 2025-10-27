@@ -11,8 +11,6 @@
     <!-- Alert Messages -->
     <div id="alertContainer"></div>
 
-   
-
     <!-- Search Filters -->
     <div class="filters-section">
         <h3 class="section-title">Buscar Pacientes</h3>
@@ -47,18 +45,17 @@
         </form>
     </div>
 
- <!-- Add Button (registrar pacientes) -->
-<div class="add-section" id="addHistoriaSection" style="display:none;">
-     <span class="text-muted" id="pacienteNoRegistradoMsg" style="margin-left:15px; font-style: italic;">
-        <i class="fas fa-info-circle"></i>
-        Este paciente aún no tiene historia clínica
-    </span>
-    <a class="btn btn-primary" href="@Url.Action("Create", "HistoriaClinica")">
-    <i class="fas fa-file-medical"></i>
-    Crear Historia Clínica
-</a>
-
-</div>
+    <!-- Add Button -->
+    <div class="add-section" id="addHistoriaSection" style="display:none;">
+        <span class="text-muted" id="pacienteNoRegistradoMsg" style="margin-left:15px; font-style: italic;">
+            <i class="fas fa-info-circle"></i>
+            Este paciente aún no tiene historia clínica
+        </span>
+        <a class="btn btn-primary" href="@Url.Action("Create", "HistoriaClinica")">
+            <i class="fas fa-file-medical"></i>
+            Crear Historia Clínica
+        </a>
+    </div>
 
     <!-- Table Section -->
     <div class="table-section">
@@ -83,7 +80,6 @@
             </table>
         </div>
     </div>
-    
 
     <!-- Citas Pendientes Section -->
     <div class="table-section" style="margin-top:30px;">
@@ -104,6 +100,31 @@
                 <tbody id="citasPendientesBody">
                     <tr>
                         <td colspan="7" class="no-data">No hay citas pendientes.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Derivaciones Section -->
+    <div class="table-section" style="margin-top:30px;">
+        <h3 class="section-title">Derivaciones</h3>
+        <div class="table-responsive">
+            <table class="data-table" id="derivacionesTable">
+                <thead>
+                    <tr>
+                        <th>TIPO DOC</th>
+                        <th>NRO. DOCUMENTO</th>
+                        <th>MÉDICO SOLICITANTE</th>
+                        <th>ESPECIALIDAD DESTINO</th>
+                        <th>FECHA SOLICITUD</th>
+                        <th>ESTADO</th>
+                        <th>ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody id="derivacionesBody">
+                    <tr>
+                        <td colspan="7" class="no-data">No hay derivaciones.</td>
                     </tr>
                 </tbody>
             </table>

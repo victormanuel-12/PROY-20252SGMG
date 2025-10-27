@@ -17,45 +17,59 @@ namespace SGMG.Repository.RepositoryImpl
       _context = context;
     }
 
-    // Obtener todos los pacientes
     public async Task<IEnumerable<Paciente>> GetAllPacientesAsync()
     {
       return await _context.Pacientes.ToListAsync();
     }
 
-    // NUEVO: Obtener paciente por tipo y número de documento
     public async Task<Paciente?> GetPacienteByDocumentoAsync(string tipoDocumento, string numeroDocumento)
     {
-      return await _context.Pacientes.FirstOrDefaultAsync(p => p.TipoDocumento == tipoDocumento && p.NumeroDocumento == numeroDocumento);
+      return await _context.Pacientes
+        .FirstOrDefaultAsync(p => p.TipoDocumento == tipoDocumento && p.NumeroDocumento == numeroDocumento);
     }
 
-    // NUEVO: Obtener citas pendientes de un paciente
     public async Task<IEnumerable<Cita>> GetCitasPendientesByPacienteAsync(int idPaciente)
     {
-      return await _context.Citas.Include(c => c.Paciente).Include(c => c.Medico).Where(c => c.IdPaciente == idPaciente && (c.EstadoCita == "Pendiente" || c.EstadoCita == "Confirmada")).OrderByDescending(c => c.FechaRegistro).ToListAsync();
+      return await _context.Citas
+        .Include(c => c.Paciente)
+        .Include(c => c.Medico)
+        .Where(c => c.IdPaciente == idPaciente &&
+               (c.EstadoCita == "Pendiente" || c.EstadoCita == "Confirmada"))
+        .OrderByDescending(c => c.FechaRegistro)
+        .ToListAsync();
     }
 
-    // Obtener paciente por Id
+    // NUEVO: Obtener derivaciones de un paciente
+    public async Task<IEnumerable<Derivacion>> GetDerivacionesByPacienteAsync(int idPaciente)
+    {
+      return await _context.Derivaciones
+        .Include(d => d.Cita)
+          .ThenInclude(c => c.Paciente)
+        .Include(d => d.Cita)
+          .ThenInclude(c => c.Medico)
+        .Include(d => d.MedicoDestino)
+        .Where(d => d.Cita.IdPaciente == idPaciente)
+        .OrderByDescending(d => d.FechaDerivacion)
+        .ToListAsync();
+    }
+
     public async Task<Paciente?> GetPacienteByIdAsync(int id)
     {
       return await _context.Pacientes.FindAsync(id);
     }
 
-    // Agregar paciente
     public async Task AddPacienteAsync(Paciente paciente)
     {
       await _context.Pacientes.AddAsync(paciente);
       await _context.SaveChangesAsync();
     }
 
-    // Actualizar paciente
     public async Task UpdatePacienteAsync(Paciente paciente)
     {
       _context.Pacientes.Update(paciente);
       await _context.SaveChangesAsync();
     }
 
-    // Eliminar paciente
     public async Task DeletePacienteAsync(int id)
     {
       var paciente = await _context.Pacientes.FindAsync(id);

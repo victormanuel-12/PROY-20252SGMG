@@ -16,5 +16,6 @@ namespace SGMG.Repository
     Task AddPacienteAsync(Paciente paciente);
     Task UpdatePacienteAsync(Paciente paciente);
     Task DeletePacienteAsync(int id);
+    Task<IEnumerable<Derivacion>> GetDerivacionesByPacienteAsync(int idPaciente);
   }
 }
