@@ -34,7 +34,7 @@ namespace SGMG.Repository.RepositoryImpl
         .Include(c => c.Paciente)
         .Include(c => c.Medico)
         .Where(c => c.IdPaciente == idPaciente &&
-               (c.EstadoCita == "Pendiente" || c.EstadoCita == "Confirmada"))
+               (c.EstadoCita == "Pendiente" || c.EstadoCita == "Pagado"))
         .OrderByDescending(c => c.FechaRegistro)
         .ToListAsync();
     }
