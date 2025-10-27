@@ -28,4 +28,5 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
   public DbSet<DetalleReceta> DetallesRecetas { get; set; }
   public DbSet<Diagnostico> Diagnosticos { get; set; }
   public DbSet<Consulta> Consultas { get; set; }
+  public DbSet<Derivacion> Derivaciones { get; set; }
 }
