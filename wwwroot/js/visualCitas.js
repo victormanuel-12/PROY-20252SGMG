@@ -6,7 +6,21 @@ document.addEventListener("DOMContentLoaded", () => {
   if (buscarBtn) buscarBtn.addEventListener("click", onBuscarMedicos);
   if (limpiarBtn) limpiarBtn.addEventListener("click", onLimpiarFiltros);
   loadConsultorios();
+
+  // Mostrar información si hay idPaciente o idCita
+  mostrarInformacionInicial();
 });
+
+// Mostrar información si se recibieron parámetros
+function mostrarInformacionInicial() {
+  if (window.APP_DATA && window.APP_DATA.idCita) {
+    showNotificationModal(
+      `Reprogramando cita #${window.APP_DATA.idCita} para el paciente #${
+        window.APP_DATA.idPaciente || "N/A"
+      }`
+    );
+  }
+}
 
 async function loadConsultorios() {
   try {
@@ -59,13 +73,11 @@ function mostrarErroresCampo(errores) {
 }
 
 function mostrarMensajeSuperior(periodoSemana, totalMedicos) {
-  // Remover mensaje anterior si existe
   const mensajeAnterior = document.querySelector(".mensaje-disponibilidad");
   if (mensajeAnterior) {
     mensajeAnterior.remove();
   }
 
-  // Crear nuevo mensaje
   const mensajeDiv = document.createElement("div");
   mensajeDiv.className = "mensaje-disponibilidad alert alert-success";
   mensajeDiv.style.cssText =
@@ -87,13 +99,11 @@ function mostrarMensajeSuperior(periodoSemana, totalMedicos) {
     </div>
   `;
 
-  // Insertar antes de la tabla
   const tableSection = document.querySelector(".table-section");
   if (tableSection) {
     tableSection.parentElement.insertBefore(mensajeDiv, tableSection);
   }
 
-  // Auto-desvanecer después de 6 segundos
   setTimeout(() => {
     mensajeDiv.style.transition = "opacity 0.5s, transform 0.5s";
     mensajeDiv.style.opacity = "0";
@@ -106,7 +116,6 @@ function mostrarMensajeSuperior(periodoSemana, totalMedicos) {
   }, 6000);
 }
 
-// Función para mostrar modal de notificaciones
 function showNotificationModal(message) {
   const modal = document.getElementById("notificationModal");
   const notificationMessage = document.getElementById("notificationMessage");
@@ -118,7 +127,6 @@ function showNotificationModal(message) {
   }
 }
 
-// Función para cerrar el modal de notificaciones
 function closeNotificationModal() {
   const modal = document.getElementById("notificationModal");
   if (modal) {
@@ -130,20 +138,28 @@ function closeNotificationModal() {
   }
 }
 
-/// Función para ver horario - Envía ID del médico y del paciente
-// Función para ver horario - Envía ID del médico, paciente y semana
+// Función actualizada para ver horario - Incluye idCita si está disponible
 function verHorario(medico) {
   console.log("Datos del médico:", medico);
 
-  // Obtener el ID del médico
   const idMedico =
     medico.idMedico || medico.id || medico.Id || medico.IdMedico || medico.ID;
 
-  // Obtener el ID del paciente desde la URL actual
-  const urlParams = new URLSearchParams(window.location.search);
-  const idPaciente = urlParams.get("idPaciente");
+  // Obtener el ID del paciente desde APP_DATA o desde la URL
+  let idPaciente = null;
+  if (window.APP_DATA && window.APP_DATA.idPaciente) {
+    idPaciente = window.APP_DATA.idPaciente;
+  } else {
+    const urlParams = new URLSearchParams(window.location.search);
+    idPaciente = urlParams.get("idPaciente");
+  }
 
-  // Obtener el valor de la semana del select
+  // Obtener el ID de la cita desde APP_DATA
+  let idCita = null;
+  if (window.APP_DATA && window.APP_DATA.idCita) {
+    idCita = window.APP_DATA.idCita;
+  }
+
   const semanaSelect = document.getElementById("fSemana");
   const semana = semanaSelect ? semanaSelect.value : "0";
 
@@ -152,24 +168,27 @@ function verHorario(medico) {
     idMedico,
     "ID Paciente:",
     idPaciente,
+    "ID Cita:",
+    idCita,
     "Semana:",
     semana
   );
 
   if (idMedico) {
-    // Construir la URL con todos los parámetros
     let url = `/Home/HorarioMedico?idMedico=${encodeURIComponent(idMedico)}`;
 
     if (idPaciente) {
       url += `&idPaciente=${encodeURIComponent(idPaciente)}`;
     }
 
-    // Siempre enviar la semana
+    // Agregar idCita si está disponible
+    if (idCita) {
+      url += `&idCita=${encodeURIComponent(idCita)}`;
+    }
+
     url += `&semana=${encodeURIComponent(semana)}`;
 
     console.log("Redirigiendo a:", url);
-
-    // Redirigir a la nueva página
     window.location.href = url;
   } else {
     showNotificationModal(
@@ -190,7 +209,6 @@ async function onBuscarMedicos(e) {
   const turno = document.getElementById("fTurno")?.value || null;
   const semana = document.getElementById("fSemana")?.value || 0;
 
-  // Construir el body del POST
   const body = {
     semana: parseInt(semana) || 0,
     numeroDni: numeroDni,
@@ -211,18 +229,15 @@ async function onBuscarMedicos(e) {
     const result = await res.json();
 
     if (!result.success) {
-      // Mostrar errores de validación
       if (result.data && Array.isArray(result.data)) {
         mostrarErroresCampo(result.data);
       } else {
-        // Usar el modal para otros tipos de errores
         showNotificationModal(result.message || "Error en la búsqueda");
       }
       renderMedicosTable([]);
       return;
     }
 
-    // Mostrar mensaje superior con información del período
     if (result.data) {
       mostrarMensajeSuperior(
         result.data.periodoSemana || "N/A",
@@ -252,7 +267,6 @@ function onLimpiarFiltros() {
   );
   limpiarErrores();
 
-  // Remover mensaje superior
   const mensaje = document.querySelector(".mensaje-disponibilidad");
   if (mensaje) mensaje.remove();
 
@@ -327,7 +341,6 @@ if (!document.getElementById("customStyles")) {
       margin-top: 0.25rem;
     }
     
-    /* Estilos para el modal de notificaciones */
     .custom-modal {
       display: none;
       position: fixed;
@@ -418,7 +431,6 @@ if (!document.getElementById("customStyles")) {
       border-radius: 4px;
     }
     
-    /* Responsive para el mensaje de éxito */
     @media (max-width: 768px) {
       .mensaje-disponibilidad {
         font-size: 0.85rem !important;

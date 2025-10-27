@@ -79,7 +79,7 @@
     </div>
   </div>
 </div>
-<!-- Modal para errores -->
+
 <!-- Modal para notificaciones -->
 <div id="notificationModal" class="custom-modal">
   <div class="modal-content">
@@ -102,6 +102,15 @@
     </div>
   </div>
 </div>
+
+@* Pasar los IDs desde el ViewBag al JavaScript *@
+<script>
+    window.APP_DATA = {
+        idPaciente: @Html.Raw(ViewBag.IdPaciente != null ? ViewBag.IdPaciente.ToString() : "null"),
+        idCita: @Html.Raw(ViewBag.IdCita != null ? ViewBag.IdCita.ToString() : "null")
+    };
+</script>
+
 @section Scripts {
     <script src="~/js/visualCitas.js" asp-append-version="true"></script>
 }

@@ -268,7 +268,7 @@ function renderCitasPendientesTable(citas) {
   if (!tbody) return;
 
   if (!citas || citas.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="no-data">No hay citas pendientes.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="no-data">No hay citas pendientes.</td></tr>`;
     return;
   }
 
@@ -280,6 +280,8 @@ function renderCitasPendientesTable(citas) {
       const horaFormateada = c.horaCita || "-";
       const estado = c.estadoCita || "Sin Estado";
       const estadoClass = getEstadoClass(estado);
+      const idCita = c.idCita || c.IdCita;
+      const idPaciente = c.idPaciente || c.IdPaciente;
 
       return `
         <tr>
@@ -290,6 +292,22 @@ function renderCitasPendientesTable(citas) {
             <td>${horaFormateada}</td>
             <td><span class="estado-pill ${estadoClass}">${estado}</span></td>
             <td>${c.nombreCompletoMedico || ""}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-action btn-reprogramar" 
+                            onclick="reprogramarCita(${idPaciente}, ${idCita})"
+                            title="Reprogramar Cita">
+                        <i class="fas fa-calendar-alt"></i>
+                        Reprogramar
+                    </button>
+                    <button class="btn-action btn-cancelar" 
+                            onclick="cancelarCita(${idCita})"
+                            title="Cancelar Cita">
+                        <i class="fas fa-times-circle"></i>
+                        Cancelar
+                    </button>
+                </div>
+            </td>
         </tr>
       `;
     })
@@ -468,4 +486,87 @@ function getEstadoClass(estado) {
     default:
       return "estado-default";
   }
+}
+
+// Reprogramar cita
+function reprogramarCita(idPaciente, idCita) {
+  console.log(
+    "Reprogramar cita - Paciente ID:",
+    idPaciente,
+    "Cita ID:",
+    idCita
+  );
+
+  if (!idPaciente || !idCita) {
+    showAlert("Error: No se pudo identificar la cita o el paciente.", "error");
+    return;
+  }
+
+  // Redirigir a VisualCitas con ambos parámetros
+  const url = `/Home/VisualCitas?idPaciente=${encodeURIComponent(
+    idPaciente
+  )}&idCita=${encodeURIComponent(idCita)}`;
+  console.log("Redirigiendo a:", url);
+  window.location.href = url;
+}
+
+// Cancelar cita
+async function cancelarCita(idCita) {
+  console.log("Cancelar cita - Cita ID:", idCita);
+
+  if (!idCita) {
+    showAlert("Error: No se pudo identificar la cita.", "error");
+    return;
+  }
+
+  // Confirmar antes de cancelar
+  if (!confirm("¿Está seguro de que desea cancelar esta cita?")) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/citas/cancelar/${idCita}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+      showAlert("Cita cancelada exitosamente.", "success");
+      // Recargar las citas pendientes
+      const pacienteId = getCurrentPacienteId();
+      if (pacienteId) {
+        await loadCitasPendientes(pacienteId);
+      }
+    } else {
+      showAlert(result.message || "Error al cancelar la cita.", "error");
+    }
+  } catch (error) {
+    console.error("Error al cancelar cita:", error);
+    showAlert("Error al cancelar la cita.", "error");
+  }
+}
+
+// Obtener el ID del paciente actual (del último buscado)
+function getCurrentPacienteId() {
+  // Puedes guardar esto en una variable global cuando buscas
+  const tbody = document.getElementById("pacienteTableBody");
+  if (!tbody) return null;
+
+  const firstRow = tbody.querySelector("tr");
+  if (!firstRow || firstRow.classList.contains("no-data")) return null;
+
+  // Intentar extraer del botón de editar
+  const editBtn = firstRow.querySelector(
+    "button[onclick*='editarHistoriaClinica']"
+  );
+  if (editBtn) {
+    const match = editBtn.getAttribute("onclick").match(/\d+/);
+    return match ? parseInt(match[0]) : null;
+  }
+
+  return null;
 }

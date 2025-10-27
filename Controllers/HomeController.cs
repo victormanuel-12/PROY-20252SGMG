@@ -59,9 +59,12 @@ public class HomeController : Controller
   {
     return View();
   }
-  public IActionResult VisualCitas(int? idPaciente)
+  public IActionResult VisualCitas(int? idPaciente, int? idCita)
   {
-    ViewBag.IdPaciente = idPaciente;
+    // Solo enviar a la vista si los parámetros son válidos
+    ViewBag.IdPaciente = idPaciente.HasValue && idPaciente.Value > 0 ? idPaciente : null;
+    ViewBag.IdCita = idCita.HasValue && idCita.Value > 0 ? idCita : null;
+
     return View();
   }
 
@@ -73,15 +76,17 @@ public class HomeController : Controller
   {
     return View();
   }
-  public IActionResult HorarioMedico(int? idMedico, int? idPaciente, int? semana)
+  public IActionResult HorarioMedico(int? idMedico, int? idPaciente, int? idCita, int? semana)
   {
     if (idMedico == null || idMedico == 0)
     {
       return RedirectToAction("VisualCitas");
     }
+
     ViewBag.Semana = semana ?? 0;
     ViewBag.IdMedico = idMedico;
-    ViewBag.IdPaciente = idPaciente;
+    ViewBag.IdPaciente = idPaciente.HasValue && idPaciente.Value > 0 ? idPaciente : null;
+    ViewBag.IdCita = idCita.HasValue && idCita.Value > 0 ? idCita : null;
     ViewData["Title"] = $"Horario del Médico - ID: {idMedico}";
 
     return View();
