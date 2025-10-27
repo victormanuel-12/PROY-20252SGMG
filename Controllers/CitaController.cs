@@ -10,6 +10,11 @@ using SGMG.Dtos.Request;
 using SGMG.Dtos.Response;
 using SGMG.Services;
 
+
+using System.Threading.Tasks;
+using SGMG.Repository;
+using PROY_20252SGMG.Dtos.Request;
+
 namespace SGMG.Controllers
 {
   public class CitaController : Controller
@@ -17,12 +22,14 @@ namespace SGMG.Controllers
     private readonly ApplicationDbContext _context;
     private readonly ILogger<CitaController> _logger;
     private readonly ICitaService _citaService;
+    private readonly ICitaRepository _citaRepository;
 
-    public CitaController(ApplicationDbContext context, ILogger<CitaController> logger, ICitaService citaService)
+    public CitaController(ApplicationDbContext context, ILogger<CitaController> logger, ICitaService citaService, ICitaRepository citaRepository)
     {
       _context = context;
       _logger = logger;
       _citaService = citaService;
+      _citaRepository = citaRepository;
     }
 
     [HttpGet]
@@ -95,6 +102,133 @@ namespace SGMG.Controllers
       ViewData["Title"] = $"Horario del Médico - ID: {idMedico}";
 
       return View();
+    }
+    [HttpPut]
+    [Route("/ReprogramarCita")]
+    public async Task<IActionResult> ReprogramarCita([FromBody] ReprogramarCitaRequest request)
+    {
+      try
+      {
+        if (request.IdCita <= 0)
+          return Json(new { success = false, mensaje = "ID de cita inválido" });
+
+        if (request.IdMedico <= 0 || request.IdPaciente <= 0)
+          return Json(new { success = false, mensaje = "Datos incompletos" });
+
+        if (string.IsNullOrEmpty(request.FechaCita) || string.IsNullOrEmpty(request.HoraCita))
+          return Json(new { success = false, mensaje = "Fecha u hora inválidas" });
+
+        // Buscar la cita existente
+        var cita = await _citaRepository.GetCitaByIdAsync(request.IdCita);
+        if (cita == null)
+          return Json(new { success = false, mensaje = "Cita no encontrada" });
+
+        // Verificar que la cita pertenece al paciente
+        if (cita.IdPaciente != request.IdPaciente)
+          return Json(new { success = false, mensaje = "La cita no pertenece al paciente especificado" });
+
+        // GUARDAR DATOS ANTERIORES PARA DEVOLVERLOS
+        var fechaAnterior = cita.FechaCita.ToString("yyyy-MM-dd");
+        var horaAnterior = cita.HoraCita.ToString(@"hh\:mm");
+        var medicoAnterior = cita.IdMedico;
+
+        // Verificar que el nuevo horario esté disponible
+        var fechaCita = DateTime.Parse(request.FechaCita);
+        var horaCita = TimeSpan.Parse(request.HoraCita);
+
+        // Verificar si ya existe otra cita en el nuevo horario
+        var citaExistente = await _context.Citas
+            .Where(c => c.IdMedico == request.IdMedico &&
+                       c.FechaCita == fechaCita &&
+                       c.HoraCita == horaCita &&
+                       c.IdCita != request.IdCita)
+            .FirstOrDefaultAsync();
+
+        if (citaExistente != null)
+          return Json(new { success = false, mensaje = "El horario seleccionado ya está ocupado" });
+
+        // ACTUALIZAR DISPONIBILIDAD DEL MÉDICO ANTERIOR (si cambió de médico)
+        if (medicoAnterior != request.IdMedico)
+        {
+          var hoy = DateTime.Today;
+          var diasDesdeInicio = (int)hoy.DayOfWeek - (int)DayOfWeek.Monday;
+          if (diasDesdeInicio < 0) diasDesdeInicio += 7;
+
+          var inicioSemanaBase = hoy.AddDays(-diasDesdeInicio);
+
+          // Calcular semana de la cita anterior
+          var diasDiferencia = (cita.FechaCita.Date - inicioSemanaBase.Date).Days;
+          var semanaAnterior = diasDiferencia / 7;
+          var inicioSemanaAnterior = inicioSemanaBase.AddDays(semanaAnterior * 7).Date;
+
+          var disponibilidadAnterior = await _context.DisponibilidadesSemanales
+              .FirstOrDefaultAsync(d => d.IdMedico == medicoAnterior &&
+                                       d.FechaInicioSemana.Date == inicioSemanaAnterior.Date);
+
+          if (disponibilidadAnterior != null && disponibilidadAnterior.CitasActuales > 0)
+          {
+            disponibilidadAnterior.CitasActuales--;
+            _logger.LogInformation($"✅ Disponibilidad del médico anterior actualizada: {disponibilidadAnterior.CitasActuales}/{disponibilidadAnterior.CitasMaximas}");
+          }
+        }
+
+        // Actualizar la cita
+        cita.IdMedico = request.IdMedico;
+        cita.FechaCita = fechaCita;
+        cita.HoraCita = horaCita;
+        cita.EstadoCita = "Pendiente";
+
+        await _citaRepository.UpdateCitaAsync(cita);
+
+        // ACTUALIZAR DISPONIBILIDAD DEL NUEVO MÉDICO (si cambió de médico)
+        if (medicoAnterior != request.IdMedico)
+        {
+          var hoy = DateTime.Today;
+          var diasDesdeInicio = (int)hoy.DayOfWeek - (int)DayOfWeek.Monday;
+          if (diasDesdeInicio < 0) diasDesdeInicio += 7;
+
+          var inicioSemanaBase = hoy.AddDays(-diasDesdeInicio);
+          var inicioSemana = inicioSemanaBase.AddDays(request.Semana * 7).Date;
+
+          var disponibilidad = await _context.DisponibilidadesSemanales
+              .FirstOrDefaultAsync(d => d.IdMedico == request.IdMedico &&
+                                       d.FechaInicioSemana.Date == inicioSemana.Date);
+
+          if (disponibilidad != null)
+          {
+            disponibilidad.CitasActuales++;
+            _logger.LogInformation($"✅ Disponibilidad del nuevo médico actualizada: {disponibilidad.CitasActuales}/{disponibilidad.CitasMaximas}");
+          }
+        }
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation($"✅ Cita reprogramada exitosamente: #{request.IdCita}");
+        _logger.LogInformation($"   Anterior: {fechaAnterior} {horaAnterior}");
+        _logger.LogInformation($"   Nueva: {cita.FechaCita:yyyy-MM-dd} {cita.HoraCita:hh\\:mm}");
+
+        return Json(new
+        {
+          success = true,
+          mensaje = "Cita reprogramada exitosamente",
+          data = new
+          {
+            idCita = cita.IdCita,
+            // DATOS NUEVOS
+            fechaCita = cita.FechaCita.ToString("yyyy-MM-dd"),
+            horaCita = cita.HoraCita.ToString(@"hh\:mm"),
+            // DATOS ANTERIORES PARA DESBLOQUEAR EN EL CALENDARIO
+            fechaAnterior = fechaAnterior,
+            horaAnterior = horaAnterior,
+            cambioMedico = medicoAnterior != request.IdMedico
+          }
+        });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error al reprogramar cita");
+        return Json(new { success = false, mensaje = "Error al reprogramar la cita: " + ex.Message });
+      }
     }
 
     [HttpGet]
@@ -197,7 +331,8 @@ namespace SGMG.Controllers
         _logger.LogInformation($"   → Citas Máximas: {disponibilidad.CitasMaximas}");
         _logger.LogInformation($"   → Disponibles: {disponibilidad.CitasMaximas - disponibilidad.CitasActuales}");
 
-        // Obtener citas ocupadas en ese rango
+        // IMPORTANTE: Obtener TODAS las citas (sin importar el estado)
+        // Esto asegura que los horarios ocupados se muestren correctamente
         _logger.LogInformation($"🔍 Buscando citas ocupadas en el rango de fechas...");
         var citasOcupadas = _context.Citas
             .Where(c => c.IdMedico == idMedico &&
@@ -206,7 +341,8 @@ namespace SGMG.Controllers
             .Select(c => new
             {
               fecha = c.FechaCita.ToString("yyyy-MM-dd"),
-              hora = c.HoraCita.ToString(@"hh\:mm")
+              hora = c.HoraCita.ToString(@"hh\:mm"),
+              estado = c.EstadoCita // Incluir estado para debugging
             })
             .ToList();
 
@@ -218,7 +354,7 @@ namespace SGMG.Controllers
           int contador = 1;
           foreach (var cita in citasOcupadas)
           {
-            _logger.LogInformation($"   [{contador}] Fecha: {cita.fecha}, Hora: {cita.hora}");
+            _logger.LogInformation($"   [{contador}] Fecha: {cita.fecha}, Hora: {cita.hora}, Estado: {cita.estado}");
             contador++;
           }
         }
@@ -240,12 +376,13 @@ namespace SGMG.Controllers
         _logger.LogInformation("║           FIN ObtenerDatosCalendario - ÉXITO ✅                ║");
         _logger.LogInformation("╚════════════════════════════════════════════════════════════════╝");
 
+        // Enviar solo fecha y hora (sin estado) al frontend
         return Json(new
         {
           medicoNombre = nombreCompleto,
           turno = medico.Turno,
           fechasSemana = fechasSemana,
-          citasOcupadas = citasOcupadas,
+          citasOcupadas = citasOcupadas.Select(c => new { c.fecha, c.hora }).ToList(),
           inicioSemana = inicioSemana.ToString("dd/MM/yyyy"),
           finSemana = finSemana.ToString("dd/MM/yyyy")
         });
