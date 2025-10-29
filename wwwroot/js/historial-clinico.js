@@ -194,7 +194,7 @@ function irAConsulta() {
 }
 
 function irATriaje() {
-    window.location.href = `/triaje/registrar?idPaciente=${idPacienteActual}`;
+    window.location.href = `/triaje/historial?idPaciente=${idPacienteActual}`;
 }
 
 function irACitas() {
