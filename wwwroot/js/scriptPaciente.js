@@ -300,9 +300,9 @@ function renderCitasPendientesTable(citas) {
                         <i class="fas fa-calendar-alt"></i>
                         Reprogramar
                     </button>
-                    <button class="btn-action btn-cancelar" 
-                            onclick="cancelarCita(${idCita})"
-                            title="Cancelar Cita">
+          <button class="btn-action btn-cancelar" 
+              onclick="openCancelModal(${idCita})"
+              title="Cancelar Cita">
                         <i class="fas fa-times-circle"></i>
                         Cancelar
                     </button>
@@ -510,45 +510,75 @@ function reprogramarCita(idPaciente, idCita) {
   window.location.href = url;
 }
 
-// Cancelar cita
-async function cancelarCita(idCita) {
-  console.log("Cancelar cita - Cita ID:", idCita);
+// Modal de confirmación para cancelar cita
+let cancelModalCitaId = null;
 
-  if (!idCita) {
-    showAlert("Error: No se pudo identificar la cita.", "error");
-    return;
-  }
+function openCancelModal(idCita) {
+  cancelModalCitaId = idCita;
+  const modal = document.getElementById("cancelConfirmModal");
+  const msg = document.getElementById("cancelModalMessage");
+  if (msg)
+    msg.innerText = `¿Está seguro de que desea cancelar la cita #${idCita}? Esta acción liberará el cupo en la semana del médico.`;
+  if (modal) modal.style.display = "block";
+}
 
-  // Confirmar antes de cancelar
-  if (!confirm("¿Está seguro de que desea cancelar esta cita?")) {
-    return;
-  }
+function closeCancelModal() {
+  cancelModalCitaId = null;
+  const modal = document.getElementById("cancelConfirmModal");
+  if (modal) modal.style.display = "none";
+}
+
+async function confirmCancelCita() {
+  if (!cancelModalCitaId) return;
 
   try {
-    const res = await fetch(`${API_BASE_URL}/citas/cancelar/${idCita}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const res = await fetch(
+      `${API_BASE_URL}/citas/cancelar/${cancelModalCitaId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     const result = await res.json();
 
-    if (result.success) {
-      showAlert("Cita cancelada exitosamente.", "success");
-      // Recargar las citas pendientes
+    if (result && result.success) {
+      showAlert(
+        result.message || result.mensaje || "Cita cancelada exitosamente.",
+        "success"
+      );
       const pacienteId = getCurrentPacienteId();
-      if (pacienteId) {
-        await loadCitasPendientes(pacienteId);
-      }
+      if (pacienteId) await loadCitasPendientes(pacienteId);
     } else {
-      showAlert(result.message || "Error al cancelar la cita.", "error");
+      const msg =
+        (result && (result.message || result.mensaje)) ||
+        "No se pudo cancelar la cita.";
+      // Si el backend indica que existe triaje, mostrar modal específico
+      if (msg.toLowerCase().includes("triaje")) {
+        openBlockedModal(msg);
+      } else {
+        showAlert(msg, "error");
+      }
     }
   } catch (error) {
     console.error("Error al cancelar cita:", error);
     showAlert("Error al cancelar la cita.", "error");
+  } finally {
+    closeCancelModal();
   }
 }
+
+// Registrar el listener para el botón de confirmación del modal
+document.addEventListener("DOMContentLoaded", function () {
+  const confirmBtn = document.getElementById("confirmCancelBtn");
+  if (confirmBtn) {
+    confirmBtn.addEventListener("click", function () {
+      confirmCancelCita();
+    });
+  }
+});
 
 // Obtener el ID del paciente actual (del último buscado)
 function getCurrentPacienteId() {
@@ -569,4 +599,20 @@ function getCurrentPacienteId() {
   }
 
   return null;
+}
+
+// Modal para mostrar que la cancelación está bloqueada por triaje
+function openBlockedModal(message) {
+  const modal = document.getElementById("cancelBlockedModal");
+  const msgEl = document.getElementById("blockedModalMessage");
+  if (msgEl)
+    msgEl.innerText =
+      message ||
+      "El paciente cuenta con triaje; no se puede cancelar esta cita.";
+  if (modal) modal.style.display = "block";
+}
+
+function closeBlockedModal() {
+  const modal = document.getElementById("cancelBlockedModal");
+  if (modal) modal.style.display = "none";
 }
