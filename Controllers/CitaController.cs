@@ -600,5 +600,62 @@ namespace SGMG.Controllers
         return Json(new { success = false, mensaje = "Error al registrar cita: " + ex.Message });
       }
     }
+
+    // Cancelar una cita (solo si NO tiene triaje) y actualizar la disponibilidad semanal
+    [HttpDelete]
+    [Route("/citas/cancelar/{id}")]
+    public async Task<IActionResult> CancelarCita(int id)
+    {
+      try
+      {
+        if (id <= 0)
+          return Json(new { success = false, message = "ID de cita inválido", mensaje = "ID de cita inválido" });
+
+        var cita = await _context.Citas
+            .Include(c => c.Triage)
+            .FirstOrDefaultAsync(c => c.IdCita == id);
+
+        if (cita == null)
+          return Json(new { success = false, message = "Cita no encontrada", mensaje = "Cita no encontrada" });
+
+        // No permitir cancelar si ya existe un triaje asociado
+        if (cita.IdTriage.HasValue && cita.IdTriage.Value > 0)
+        {
+          return Json(new { success = false, message = "No se puede cancelar la cita porque tiene triaje asociado.", mensaje = "No se puede cancelar la cita porque tiene triaje asociado." });
+        }
+
+        // Actualizar disponibilidad semanal: buscar la semana correspondiente a la fecha de la cita
+        var fechaCita = cita.FechaCita.Date;
+        var diasDesdeInicio = (int)fechaCita.DayOfWeek - (int)DayOfWeek.Monday;
+        if (diasDesdeInicio < 0) diasDesdeInicio += 7;
+        var inicioSemana = fechaCita.AddDays(-diasDesdeInicio).Date;
+
+        var disponibilidad = _context.DisponibilidadesSemanales
+            .FirstOrDefault(d => d.IdMedico == cita.IdMedico && d.FechaInicioSemana.Date == inicioSemana.Date);
+
+        if (disponibilidad != null)
+        {
+          if (disponibilidad.CitasActuales > 0)
+          {
+            disponibilidad.CitasActuales--;
+            _logger.LogInformation($"Disponibilidad actualizada tras cancelar cita: {disponibilidad.CitasActuales}/{disponibilidad.CitasMaximas}");
+          }
+          else
+          {
+            _logger.LogWarning($"Disponibilidad encontrada pero CitasActuales ya es 0 (IdDisponibilidad: {disponibilidad.IdDisponibilidad})");
+          }
+        }
+
+        _context.Citas.Remove(cita);
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true, message = "Cita cancelada exitosamente", mensaje = "Cita cancelada exitosamente" });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error al cancelar cita");
+        return Json(new { success = false, message = "Error al cancelar la cita: " + ex.Message, mensaje = "Error al cancelar la cita: " + ex.Message });
+      }
+    }
   }
 }

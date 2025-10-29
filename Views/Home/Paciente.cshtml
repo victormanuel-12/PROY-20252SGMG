@@ -133,6 +133,39 @@
     </div>
 </div>
 
+<!-- Modal Confirmación Cancelar Cita -->
+<div id="cancelConfirmModal" class="custom-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:2000;">
+    <div class="modal-content" style="max-width:520px; margin:80px auto; background:#fff; padding:20px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.2);">
+        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h5 class="modal-title">¿Está seguro?</h5>
+            <button type="button" class="close-btn" onclick="closeCancelModal()" style="background:none; border:0; font-size:18px;">&times;</button>
+        </div>
+        <div class="modal-body" style="margin-top:10px;">
+            <p id="cancelModalMessage">¿Está seguro de que desea cancelar esta cita?</p>
+        </div>
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+            <button type="button" class="btn btn-secondary" onclick="closeCancelModal()">No, mantener</button>
+            <button type="button" id="confirmCancelBtn" class="btn btn-danger">Sí, cancelar cita</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: No se puede cancelar por triaje -->
+<div id="cancelBlockedModal" class="custom-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:2001;">
+    <div class="modal-content" style="max-width:520px; margin:80px auto; background:#fff; padding:20px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.2);">
+        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h5 class="modal-title">No es posible cancelar</h5>
+            <button type="button" class="close-btn" onclick="closeBlockedModal()" style="background:none; border:0; font-size:18px;">&times;</button>
+        </div>
+        <div class="modal-body" style="margin-top:10px;">
+            <p id="blockedModalMessage">El paciente cuenta con triaje; no se puede cancelar esta cita.</p>
+        </div>
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+            <button type="button" class="btn btn-primary" onclick="closeBlockedModal()">Entendido</button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="~/js/scriptPaciente.js" asp-append-version="true"></script>
 }
