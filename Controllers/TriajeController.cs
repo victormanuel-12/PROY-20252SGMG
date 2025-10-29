@@ -64,6 +64,13 @@ namespace SGMG.Controllers
       return View();
     }
 
+    [HttpGet]
+    [Route("/triaje/historial")]
+    public IActionResult Historial()
+    {
+      return View();
+    }
+
     // ============== MÉTODO PRIVADO PARA CARGAR DATOS ==============
 
     private async Task CargarDatosEnfermera()
@@ -159,6 +166,32 @@ namespace SGMG.Controllers
       {
         _logger.LogError($"Error en GetCitasPagadasPorUsuarioLogueado: {ex.Message}");
         return new GenericResponse<IEnumerable<CitaResponseDTO>>(false, $"Error: {ex.Message}");
+      }
+    }
+    
+    [HttpGet]
+    [Route("/api/triaje/historial-paciente/{idPaciente}")]
+    public async Task<IActionResult> GetHistorialPaciente(int idPaciente)
+    {
+      var response = await _triajeService.GetHistorialTriajePacienteAsync(idPaciente);
+
+      if (response.Success.GetValueOrDefault())
+      {
+        return Ok(new
+        {
+          success = true,
+          paciente = response.Data?.Paciente,
+          triajes = response.Data?.Triajes,
+          message = response.Message
+        });
+      }
+      else
+      {
+        return Ok(new
+        {
+          success = false,
+          message = response.Message
+        });
       }
     }
   }

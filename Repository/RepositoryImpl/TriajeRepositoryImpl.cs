@@ -77,5 +77,19 @@ namespace SGMG.Repository.RepositoryImpl
                 await _context.SaveChangesAsync();
             }
         }
+
+        public async Task<IEnumerable<Triaje>> GetTriajesByPacienteAsync(int idPaciente)
+        {
+            var triajes = await _context.Triages
+                .Include(t => t.Paciente)
+                .Where(t => t.IdPaciente == idPaciente)
+                .ToListAsync();
+
+            // Ordenar en memoria
+            return triajes
+                .OrderByDescending(t => t.FechaTriage)
+                .ThenByDescending(t => t.HoraTriage)
+                .ToList();
+        }
     }
 }

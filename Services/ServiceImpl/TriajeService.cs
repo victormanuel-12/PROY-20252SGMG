@@ -520,6 +520,96 @@ namespace SGMG.Services.ServiceImpl
         return new GenericResponse<IEnumerable<CitaResponseDTO>>(false, $"Error: {ex.Message}");
       }
     }
+
+
+
+    public async Task<GenericResponse<HistorialTriajeDTO>> GetHistorialTriajePacienteAsync(int idPaciente)
+    {
+      try
+      {
+        Console.WriteLine($"Obteniendo historial de triajes para paciente {idPaciente}");
+
+        // 1. Obtener información del paciente
+        var paciente = await _context.Pacientes
+            .FirstOrDefaultAsync(p => p.IdPaciente == idPaciente);
+
+        if (paciente == null)
+          return new GenericResponse<HistorialTriajeDTO>(false, "Paciente no encontrado");
+
+        // 2. Obtener historia clínica para el seguro
+        var historiaClinica = await _context.HistoriasClinicas
+            .FirstOrDefaultAsync(h => h.IdPaciente == idPaciente);
+
+        // 3. Obtener triajes del paciente
+        var triajes = await _triajeRepository.GetTriajesByPacienteAsync(idPaciente);
+
+        // 4. Calcular edad
+        int edad = paciente.Edad;
+        if (historiaClinica?.FechaNacimiento != null)
+        {
+          var today = DateTime.Today;
+          edad = today.Year - historiaClinica.FechaNacimiento.Year;
+          if (historiaClinica.FechaNacimiento.Date > today.AddYears(-edad)) edad--;
+        }
+
+        // 5. Mapear a DTO
+        var historialDTO = new HistorialTriajeDTO
+        {
+          Paciente = new PacienteInfoDTO
+          {
+            Dni = paciente.NumeroDocumento,
+            NombreCompleto = $"{paciente.Nombre} {paciente.ApellidoPaterno} {paciente.ApellidoMaterno}".Trim(),
+            Sexo = paciente.Sexo == "M" ? "Masculino" : "Femenino",
+            Edad = edad,
+            Seguro = historiaClinica?.TipoSeguro ?? "No registrado"
+          },
+          Triajes = triajes.Select(t => new TriajeDetalladoDTO
+          {
+            CodigoTriaje = $"#TRI{t.IdTriage:D3}",
+            FechaHora = $"{t.FechaTriage:dd/MM/yyyy} {t.HoraTriage:hh\\:mm}",
+            PresionArterial = $"{t.PresionArterial}/80 mmHg",
+            Temperatura = $"{t.Temperatura}°C",
+            Signos = new SignosVitalesDTO
+            {
+              Temperatura = t.Temperatura,
+              PresionArterial = t.PresionArterial,
+              FrecuenciaCardiaca = t.FrecuenciaCardiaca,
+              Saturacion = t.Saturacion
+            },
+            Medidas = new MedidasAntropometricasDTO
+            {
+              Peso = t.Peso,
+              Talla = t.Talla,
+              Imc = t.Imc,
+              ImcClasificacion = t.ClasificacionImc
+            },
+            Informacion = new InformacionTriajeDTO
+            {
+              Fecha = t.FechaTriage.ToString("dd/MM/yyyy"),
+              Hora = t.HoraTriage.ToString(@"hh\:mm"),
+              RealizadoPor = "Enf. Juan Pérez" // TODO: Obtener del contexto
+            },
+            Observaciones = t.Observaciones
+          }).ToList()
+        };
+
+        Console.WriteLine($"Historial obtenido: {historialDTO.Triajes.Count} triajes");
+
+        return new GenericResponse<HistorialTriajeDTO>(
+            true,
+            historialDTO,
+            "Historial obtenido correctamente"
+        );
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error en GetHistorialTriajePacienteAsync: {ex.Message}");
+        return new GenericResponse<HistorialTriajeDTO>(
+            false,
+            $"Error: {ex.Message}"
+        );
+      }
+    }
   }
 }
 
