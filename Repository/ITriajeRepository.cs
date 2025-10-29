@@ -14,5 +14,6 @@ namespace SGMG.Repository
         Task AddTriajeAsync(Triaje triaje);
         Task UpdateTriajeAsync(Triaje triaje);
         Task DeleteTriajeAsync(int id);
+        Task<IEnumerable<Triaje>> GetTriajesByPacienteAsync(int idPaciente);
     }
 }

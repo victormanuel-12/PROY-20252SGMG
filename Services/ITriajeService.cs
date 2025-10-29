@@ -12,6 +12,7 @@ namespace SGMG.Services
     Task<GenericResponse<IEnumerable<TriajeResponseDTO>>> GetAllTriajesAsync(); // Método para obtener todos los triajes
     Task<GenericResponse<IEnumerable<TriajeResponseDTO>>> BuscarTriajesAsync(string? tipoDoc, string? numeroDoc, DateTime? fechaInicio, DateTime? fechaFin);
     Task<GenericResponse<IEnumerable<CitaResponseDTO>>> GetCitasPagadasPorConsultorioEnfermeraAsync(int idEnfermera);
+    Task<GenericResponse<HistorialTriajeDTO>> GetHistorialTriajePacienteAsync(int idPaciente);
 
   }
 }
