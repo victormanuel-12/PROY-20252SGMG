@@ -85,6 +85,7 @@ builder.Services.AddScoped<IDisponibilidadSemanalRepository, DisponibilidadSeman
 builder.Services.AddScoped<ITriajeRepository, TriajeRepositoryImpl>();
 builder.Services.AddScoped<ICitaRepository, CitaRepositoryImpl>();
 builder.Services.AddScoped<IConsultaRepository, ConsultaRepositoryImpl>();
+builder.Services.AddScoped<IOrdenLaboratorioRepository, OrdenLaboratorioRepositoryImpl>();
 
 
 
@@ -109,6 +110,7 @@ builder.Services.AddScoped<GlobalExceptionFilter>();
 builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddScoped<IRecetaService, RecetaService>();
 builder.Services.AddScoped<IConsultaService, ConsultaService>();
+builder.Services.AddScoped<ILaboratorioService, LaboratorioService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
