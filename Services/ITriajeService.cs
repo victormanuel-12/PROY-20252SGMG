@@ -14,5 +14,7 @@ namespace SGMG.Services
     Task<GenericResponse<IEnumerable<CitaResponseDTO>>> GetCitasPagadasPorConsultorioEnfermeraAsync(int idEnfermera);
     Task<GenericResponse<HistorialTriajeDTO>> GetHistorialTriajePacienteAsync(int idPaciente);
 
+    
+
   }
 }
