@@ -313,7 +313,7 @@ function renderizarTabla(data, tipo) {
                     <td>${item.nombreCompletoMedico || ""}</td>
                     <td><button class="btn-action btn-editar" onclick="irAEditarTriaje(${
                       item.idTriaje
-                    }, ${item.idPaciente})">Editar</button></td>
+                    })">Editar</button></td> 
                 </tr>
             `;
       })
@@ -349,14 +349,10 @@ function irARegistrarTriaje(idPaciente) {
 }
 
 // Ir a editar triaje
-function irAEditarTriaje(idTriaje, idPaciente) {
-  console.log(
-    "Redirigiendo a editar triaje:",
-    idTriaje,
-    "paciente:",
-    idPaciente
-  );
-  window.location.href = `/triaje/editar?idTriaje=${idTriaje}&idPaciente=${idPaciente}`;
+function irAEditarTriaje(idTriaje) {
+  // ✅ Solo recibir idTriaje
+  console.log("Redirigiendo a editar triaje:", idTriaje);
+  window.location.href = `/triaje/editar/${idTriaje}`;
 }
 
 // Paginación (por implementar)
