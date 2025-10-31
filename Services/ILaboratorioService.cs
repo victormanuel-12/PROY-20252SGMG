@@ -9,5 +9,7 @@ namespace SGMG.Services
         Task<GenericResponse<OrdenLaboratorioResponseDTO>> CrearOrdenAsync(OrdenLaboratorioRequestDTO dto);
         Task<GenericResponse<OrdenLaboratorioResponseDTO>> ActualizarOrdenAsync(OrdenLaboratorioRequestDTO dto);
         Task<GenericResponse<OrdenLaboratorioResponseDTO>> GetOrdenByIdAsync(int idOrden);
+        Task<GenericResponse<bool>> CancelarOrdenAsync(int idOrden); 
+        Task<GenericResponse<bool>> ActualizarResultadosAsync(ActualizarResultadosDTO request);
     }
 }

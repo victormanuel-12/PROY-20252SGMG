@@ -98,7 +98,7 @@ namespace SGMG.Services.ServiceImpl
                     NumeroOrden = numeroOrden,
                     TipoExamen = dto.TipoExamen,
                     ObservacionesAdicionales = dto.ObservacionesAdicionales,
-                    Estado = "Pendiente" // ⭐ Estado por defecto
+                    Estado = "Pendiente" //Estado por defecto
                 };
 
                 await _laboratorioRepository.AddOrdenAsync(orden);
@@ -153,11 +153,13 @@ namespace SGMG.Services.ServiceImpl
                 var responseDTO = new OrdenLaboratorioResponseDTO
                 {
                     IdOrden = orden.IdOrden,
+                    IdPaciente = orden.IdPaciente,
                     NumeroOrden = orden.NumeroOrden,
                     TipoExamen = orden.TipoExamen,
                     NombreCompletoPaciente = orden.Paciente != null
                         ? $"{orden.Paciente.Nombre} {orden.Paciente.ApellidoPaterno} {orden.Paciente.ApellidoMaterno}".Trim()
                         : "",
+                    DniPaciente = orden.Paciente?.NumeroDocumento ?? "",
                     FechaSolicitud = orden.FechaSolicitud,
                     ObservacionesAdicionales = orden.ObservacionesAdicionales,
                     Resultados = orden.Resultados,
@@ -181,35 +183,108 @@ namespace SGMG.Services.ServiceImpl
         {
             try
             {
+                // Usar el método correcto del repositorio
                 var orden = await _laboratorioRepository.GetOrdenByIdAsync(idOrden);
-                if (orden == null)
-                    return new GenericResponse<OrdenLaboratorioResponseDTO>(false, "Orden no encontrada");
 
-                var responseDTO = new OrdenLaboratorioResponseDTO
+                if (orden == null)
+                {
+                    return new GenericResponse<OrdenLaboratorioResponseDTO>(false, "Orden no encontrada");
+                }
+
+                var ordenDTO = new OrdenLaboratorioResponseDTO
                 {
                     IdOrden = orden.IdOrden,
+                    IdPaciente = orden.IdPaciente,
                     NumeroOrden = orden.NumeroOrden,
-                    TipoExamen = orden.TipoExamen,
                     NombreCompletoPaciente = orden.Paciente != null
                         ? $"{orden.Paciente.Nombre} {orden.Paciente.ApellidoPaterno} {orden.Paciente.ApellidoMaterno}".Trim()
-                        : "",
+                        : "No disponible",
+                    DniPaciente = orden.Paciente?.NumeroDocumento ?? "N/A",
+                    TipoExamen = orden.TipoExamen,
                     FechaSolicitud = orden.FechaSolicitud,
-                    ObservacionesAdicionales = orden.ObservacionesAdicionales,
-                    Resultados = orden.Resultados,
+                    FechaResultado = orden.FechaResultado,
                     Estado = orden.Estado,
-                    FechaResultado = orden.FechaResultado
+                    Resultados = orden.Resultados,
+                    ObservacionesAdicionales = orden.ObservacionesAdicionales
                 };
 
-                return new GenericResponse<OrdenLaboratorioResponseDTO>(
-                    true,
-                    responseDTO,
-                    "Orden obtenida correctamente"
-                );
+                return new GenericResponse<OrdenLaboratorioResponseDTO>(true, ordenDTO, "Orden obtenida exitosamente");
             }
             catch (Exception ex)
             {
-                return new GenericResponse<OrdenLaboratorioResponseDTO>(false, $"Error: {ex.Message}");
+                return new GenericResponse<OrdenLaboratorioResponseDTO>(false, $"Error al obtener la orden: {ex.Message}");
+            }
+        }
+
+        //MÉTODO PARA CANCELAR ORDEN
+        public async Task<GenericResponse<bool>> CancelarOrdenAsync(int idOrden)
+        {
+            try
+            {
+                var orden = await _laboratorioRepository.GetOrdenByIdAsync(idOrden);
+
+                if (orden == null)
+                {
+                    return new GenericResponse<bool>(false, "Orden no encontrada");
+                }
+
+                if (orden.Estado != "Pendiente")
+                {
+                    return new GenericResponse<bool>(false, "Solo se pueden cancelar órdenes en estado Pendiente");
+                }
+
+                orden.Estado = "Cancelado";
+                await _laboratorioRepository.UpdateOrdenAsync(orden);
+
+                return new GenericResponse<bool>(true, true, "Orden cancelada exitosamente");
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse<bool>(false, $"Error al cancelar la orden: {ex.Message}");
+            }
+        }
+
+        //MÉTODO PARA ACTUALIZAR RESULTADOS
+        public async Task<GenericResponse<bool>> ActualizarResultadosAsync(ActualizarResultadosDTO request)
+        {
+            try
+            {
+                var orden = await _laboratorioRepository.GetOrdenByIdAsync(request.IdOrden);
+
+                if (orden == null)
+                {
+                    return new GenericResponse<bool>(false, "Orden no encontrada");
+                }
+
+                if (orden.Estado != "Pendiente")
+                {
+                    return new GenericResponse<bool>(false, "Solo se pueden actualizar resultados de órdenes en estado Pendiente");
+                }
+
+                // Actualizar los resultados
+                orden.Resultados = request.Resultados;
+                orden.FechaResultado = request.FechaResultado;
+                orden.Estado = "Realizado";
+
+                // Agregar observaciones finales si existen
+                if (!string.IsNullOrEmpty(request.ObservacionesFinales))
+                {
+                    orden.ObservacionesAdicionales +=
+                        $"\n\n--- Observaciones finales del laboratorio ---\n{request.ObservacionesFinales}";
+                }
+
+                await _laboratorioRepository.UpdateOrdenAsync(orden);
+
+                return new GenericResponse<bool>(true, true, "Resultados actualizados exitosamente");
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse<bool>(false, $"Error al actualizar resultados: {ex.Message}");
             }
         }
     }
 }
+
+
+       
+

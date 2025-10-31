@@ -29,6 +29,14 @@ namespace SGMG.Controllers
             return View();
         }
 
+        // Vista de subir detalles
+        [HttpGet]
+        [Route("subir-detalles")]
+        public IActionResult SubirDetalles()
+        {
+            return View();
+        }
+
         // API: Obtener historial
         [HttpGet]
         [Route("api/historial/{idPaciente}")]
@@ -89,9 +97,58 @@ namespace SGMG.Controllers
             return Ok(new
             {
                 success = response.Success,
-                data = response.Data,
+                orden = response.Data,
                 message = response.Message
             });
         }
+
+        //API: Cancelar orden
+        [HttpPut]
+        [Route("api/cancelar/{idOrden}")]
+        public async Task<IActionResult> CancelarOrden(int idOrden)
+        {
+            try
+            {
+                var response = await _laboratorioService.CancelarOrdenAsync(idOrden);
+                return Ok(new
+                {
+                    success = response.Success,
+                    message = response.Message ?? "Orden cancelada exitosamente"
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = $"Error al cancelar la orden: {ex.Message}"
+                });
+            }
+        }
+
+        //API: Actualizar resultados de la orden
+        [HttpPut]
+        [Route("api/actualizar-resultados")]
+        public async Task<IActionResult> ActualizarResultados([FromBody] ActualizarResultadosDTO dto)
+        {
+            try
+            {
+                var response = await _laboratorioService.ActualizarResultadosAsync(dto);
+                return Ok(new
+                {
+                    success = response.Success,
+                    message = response.Message ?? "Resultados actualizados exitosamente"
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = $"Error al actualizar resultados: {ex.Message}"
+                });
+            }
+        }
     }
 }
+    

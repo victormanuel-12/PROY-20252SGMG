@@ -100,6 +100,25 @@ function mostrarOrdenes() {
                         ? orden.observacionesAdicionales.substring(0, 30) + '...'
                         : orden.observacionesAdicionales || '-';
 
+                    // Determinar los botones según el estado
+                    let botonesOpciones = '';
+                    if (orden.estado === 'Pendiente') {
+                        botonesOpciones = `
+                            <button class="btn-cancel" onclick="cancelarOrden(${orden.idOrden}, ${index})" title="Cancelar orden">
+                                Cancelar
+                            </button>
+                            <button class="btn-upload" onclick="subirDetalles(${orden.idOrden}, ${index})" title="Subir detalles">
+                                Subir Detalles
+                            </button>
+                        `;
+                    } else if (orden.estado === 'Realizado') {
+                        botonesOpciones = `
+                            <button class="btn-details" onclick="verDetalles(${index})">Ver detalles</button>
+                        `;
+                    } else if (orden.estado === 'Cancelado') {
+                        botonesOpciones = `<span class="text-muted">-</span>`;
+                    }
+
                     return `
                         <tr onclick="toggleDetalles(${index})">
                             <td><strong>${orden.numeroOrden}</strong></td>
@@ -109,7 +128,7 @@ function mostrarOrdenes() {
                             <td>${observaciones}</td>
                             <td><span class="badge ${estadoClass}">${orden.estado}</span></td>
                             <td onclick="event.stopPropagation()">
-                                <button class="btn-details" onclick="verDetalles(${index})">Ver detalles</button>
+                                ${botonesOpciones}
                             </td>
                         </tr>
                         <tr id="detalles-${index}" style="display: none;">
@@ -174,4 +193,49 @@ function verDetalles(index) {
 
 function crearNuevaOrden() {
     window.location.href = `/laboratorio/nueva-orden?idPaciente=${idPacienteActual}`;
+}
+
+// Función para cancelar una orden
+async function cancelarOrden(idOrden, index) {
+    if (!confirm('¿Está seguro que desea cancelar esta orden?')) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/laboratorio/api/cancelar/${idOrden}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            showSuccess('Orden cancelada exitosamente');
+            await cargarHistorialLaboratorio(); // Recargar la lista
+        } else {
+            showError(result.message || 'Error al cancelar la orden');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Error al conectar con el servidor');
+    }
+}
+
+// Función para subir detalles de una orden
+function subirDetalles(idOrden, index) {
+    // Redirigir a una página de subida de detalles o abrir un modal
+    window.location.href = `/laboratorio/subir-detalles?idOrden=${idOrden}`;
+}
+
+// Funciones de utilidad para mostrar mensajes
+function showSuccess(message) {
+    // Implementar según tu sistema de notificaciones
+    alert(message);
+}
+
+function showError(message) {
+    // Implementar según tu sistema de notificaciones
+    alert(message);
 }
