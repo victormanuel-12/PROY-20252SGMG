@@ -3,46 +3,48 @@ let idPacienteActual = null;
 let idMedicoActual = null;
 
 // Inicializar cuando cargue la página
-document.addEventListener("DOMContentLoaded", function() {
-    obtenerParametrosURL();
-    cargarDatosPaciente();
+document.addEventListener("DOMContentLoaded", function () {
+  obtenerParametrosURL();
+  cargarDatosPaciente();
 });
 
 // Obtener parámetros de la URL
 function obtenerParametrosURL() {
-    const params = new URLSearchParams(window.location.search);
-    idPacienteActual = params.get("idPaciente");
-    idMedicoActual = params.get("idMedico");
-    
-    if (!idPacienteActual) {
-        alert("No se especificó el ID del paciente");
-        window.history.back();
-    }
+  const params = new URLSearchParams(window.location.search);
+  idPacienteActual = params.get("idPaciente");
+  idMedicoActual = params.get("idMedico");
+
+  if (!idPacienteActual) {
+    alert("No se especificó el ID del paciente");
+    window.history.back();
+  }
 }
 
 // Cargar datos del paciente y su historial
 async function cargarDatosPaciente() {
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/historia-clinica/paciente/${idPacienteActual}`);
-        const result = await res.json();
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/api/historia-clinica/paciente/${idPacienteActual}`
+    );
+    const result = await res.json();
 
-        if (result.success && result.data) {
-            mostrarInformacionPaciente(result.data);
-            mostrarHistorialDiagnosticos(result.data.diagnosticos);
-        } else {
-            document.getElementById("patientInfo").innerHTML = 
-                '<div class="no-data">No se pudo cargar la información del paciente</div>';
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        document.getElementById("patientInfo").innerHTML = 
-            '<div class="no-data">Error al cargar los datos</div>';
+    if (result.success && result.data) {
+      mostrarInformacionPaciente(result.data);
+      mostrarHistorialDiagnosticos(result.data.diagnosticos);
+    } else {
+      document.getElementById("patientInfo").innerHTML =
+        '<div class="no-data">No se pudo cargar la información del paciente</div>';
     }
+  } catch (error) {
+    console.error("Error:", error);
+    document.getElementById("patientInfo").innerHTML =
+      '<div class="no-data">Error al cargar los datos</div>';
+  }
 }
 
 // Mostrar información del paciente
 function mostrarInformacionPaciente(data) {
-    document.getElementById("patientInfo").innerHTML = `
+  document.getElementById("patientInfo").innerHTML = `
         <div class="info-item">
             <span class="info-label">DNI</span>
             <span class="info-value">${data.numeroDocumento}</span>
@@ -68,14 +70,15 @@ function mostrarInformacionPaciente(data) {
 
 // Mostrar historial de diagnósticos
 function mostrarHistorialDiagnosticos(diagnosticos) {
-    const container = document.getElementById("diagnosticsContainer");
+  const container = document.getElementById("diagnosticsContainer");
 
-    if (!diagnosticos || diagnosticos.length === 0) {
-        container.innerHTML = '<div class="no-data">No hay diagnósticos registrados</div>';
-        return;
-    }
+  if (!diagnosticos || diagnosticos.length === 0) {
+    container.innerHTML =
+      '<div class="no-data">No hay diagnósticos registrados</div>';
+    return;
+  }
 
-    const tabla = `
+  const tabla = `
         <table class="diagnostics-table">
             <thead>
                 <tr>
@@ -88,12 +91,16 @@ function mostrarHistorialDiagnosticos(diagnosticos) {
                 </tr>
             </thead>
             <tbody>
-                ${diagnosticos.map(d => {
-                    const fecha = new Date(d.fechaDiagnostico).toLocaleDateString('es-PE');
-                    const observaciones = d.observacionesMedicas.length > 50 
-                        ? d.observacionesMedicas.substring(0, 50) + '...' 
-                        : d.observacionesMedicas || 'Sin observaciones';
-                    
+                ${diagnosticos
+                  .map((d) => {
+                    const fecha = new Date(
+                      d.fechaDiagnostico
+                    ).toLocaleDateString("es-PE");
+                    const observaciones =
+                      d.observacionesMedicas.length > 50
+                        ? d.observacionesMedicas.substring(0, 50) + "..."
+                        : d.observacionesMedicas || "Sin observaciones";
+
                     return `
                         <tr>
                             <td>${fecha}</td>
@@ -108,40 +115,46 @@ function mostrarHistorialDiagnosticos(diagnosticos) {
                             </td>
                         </tr>
                     `;
-                }).join('')}
+                  })
+                  .join("")}
             </tbody>
         </table>
     `;
 
-    container.innerHTML = tabla;
+  container.innerHTML = tabla;
 }
 
 // Ver detalle de un diagnóstico
 async function verDetalle(idDiagnostico) {
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/historia-clinica/diagnostico/${idDiagnostico}`);
-        const result = await res.json();
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/api/historia-clinica/diagnostico/${idDiagnostico}`
+    );
+    const result = await res.json();
 
-        if (result.success && result.data) {
-            mostrarModalDetalle(result.data);
-        } else {
-            alert("No se pudo cargar el detalle del diagnóstico");
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        alert("Error al cargar el detalle");
+    if (result.success && result.data) {
+      mostrarModalDetalle(result.data);
+    } else {
+      alert("No se pudo cargar el detalle del diagnóstico");
     }
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Error al cargar el detalle");
+  }
 }
 
 // Mostrar modal con detalle
 function mostrarModalDetalle(diagnostico) {
-    const fecha = new Date(diagnostico.fechaDiagnostico).toLocaleDateString('es-PE', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+  const fecha = new Date(diagnostico.fechaDiagnostico).toLocaleDateString(
+    "es-PE",
+    {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }
+  );
 
-    document.getElementById("modalBody").innerHTML = `
+  document.getElementById("modalBody").innerHTML = `
         <div class="detail-section">
             <h3>Fecha del diagnóstico</h3>
             <p>${fecha}</p>
@@ -152,62 +165,62 @@ function mostrarModalDetalle(diagnostico) {
         </div>
         <div class="detail-section">
             <h3>Tratamiento específico:</h3>
-            <p>${diagnostico.tratamientoEspecifico || 'No especificado'}</p>
+            <p>${diagnostico.tratamientoEspecifico || "No especificado"}</p>
         </div>
         <div class="detail-section">
             <h3>Observaciones médicas:</h3>
-            <p>${diagnostico.observacionesMedicas || 'Sin observaciones'}</p>
+            <p>${diagnostico.observacionesMedicas || "Sin observaciones"}</p>
         </div>
     `;
 
-    document.getElementById("detailModal").classList.add("active");
+  document.getElementById("detailModal").classList.add("active");
 }
 
 // Cerrar modal
 function cerrarModal() {
-    document.getElementById("detailModal").classList.remove("active");
+  document.getElementById("detailModal").classList.remove("active");
 }
 
 // Cerrar modal al hacer clic fuera
-document.getElementById("detailModal").addEventListener("click", function(e) {
-    if (e.target === this) {
-        cerrarModal();
-    }
+document.getElementById("detailModal").addEventListener("click", function (e) {
+  if (e.target === this) {
+    cerrarModal();
+  }
 });
 
 // ========== FUNCIONES DE NAVEGACIÓN ==========
 
 function irARecetas() {
-    if (idMedicoActual) {
-        window.location.href = `/recetas?idPaciente=${idPacienteActual}&idMedico=${idMedicoActual}`;
-    } else {
-        alert("Se requiere el ID del médico para acceder a recetas");
-    }
+  if (idMedicoActual) {
+    window.location.href = `/recetas?idPaciente=${idPacienteActual}&idMedico=${idMedicoActual}`;
+  } else {
+    alert("Se requiere el ID del médico para acceder a recetas");
+  }
 }
 
 function irALaboratorio() {
-    window.location.href = `/laboratorio?idPaciente=${idPacienteActual}`;
+  window.location.href = `/laboratorio?idPaciente=${idPacienteActual}`;
 }
 
 function irAConsulta() {
-    window.location.href = `/consulta?idPaciente=${idPacienteActual}`;
+  window.location.href = `/consulta?idPaciente=${idPacienteActual}`;
 }
 
 function irATriaje() {
-    window.location.href = `/triaje/historial?idPaciente=${idPacienteActual}`;
+  window.location.href = `/triaje/historial?idPaciente=${idPacienteActual}`;
 }
 
 function irACitas() {
-    window.location.href = `/citas?idPaciente=${idPacienteActual}`;
+  window.location.href = `/citas?idPaciente=${idPacienteActual}`;
 }
 
 function irADerivaciones() {
-    window.location.href = `/derivaciones?idPaciente=${idPacienteActual}`;
+  window.location.href = `/HistorialDerivacion/Historial?idCita=${idPacienteActual}`;
 }
 
 function terminarCita() {
-    if (confirm("¿Está seguro de que desea terminar la cita?")) {
-        // Aquí podrías actualizar el estado de la cita
-        window.location.href = "/citas";
-    }
+  if (confirm("¿Está seguro de que desea terminar la cita?")) {
+    // Aquí podrías actualizar el estado de la cita
+    window.location.href = "/citas";
+  }
 }

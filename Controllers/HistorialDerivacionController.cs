@@ -17,7 +17,7 @@ namespace SGMG.Controllers
 
     // GET: HistorialDerivacion/Historial/5 (idCita)
     [HttpGet]
-    [Route("HistorialDerivacion/Historial/{idCita}")]
+    [Route("HistorialDerivacion/Historial")]
     public async Task<IActionResult> Historial(int idCita)
     {
       if (idCita <= 0)
