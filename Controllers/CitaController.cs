@@ -55,6 +55,7 @@ namespace SGMG.Controllers
       return await _citaService.GetCitasFueraHorarioAsync();
     }
 
+
     //Buscar citas pendientes con filtros   
     [HttpGet]
     [Route("/citas/buscar-pendientes")]

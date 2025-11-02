@@ -89,7 +89,7 @@ namespace SGMG.Services.ServiceImpl
       try
       {
         if (id <= 0)
-          return new GenericResponse<CitaResponseDTO>(false, "El ID de la cita no es válido.");
+          return new GenericResponse<CitaResponseDTO>(false, "El ID de la cita no es válido.xdddddddddddddd");
 
         var cita = await _citaRepository.GetCitaByIdAsync(id);
 

@@ -24,21 +24,7 @@ namespace SGMG.common.exception
     {
       var cad = context.ActionDescriptor as ControllerActionDescriptor;
 
-      if (cad != null)
-      {
-        _logger.LogInformation("🔍 Ejecutando ValidationFilter para {Controller}.{Action}",
-            cad.ControllerName, cad.ActionName);
 
-        var hasNoValidationOnMethod = cad.MethodInfo.GetCustomAttributes(typeof(NoValidationAttribute), true).Any();
-        var hasNoValidationOnController = cad.ControllerTypeInfo.GetCustomAttributes(typeof(NoValidationAttribute), true).Any();
-
-        if (hasNoValidationOnMethod || hasNoValidationOnController)
-        {
-          _logger.LogInformation("⏭️ Validación omitida para {Controller}.{Action} por atributo [NoValidation].",
-              cad.ControllerName, cad.ActionName);
-          return;
-        }
-      }
 
       var method = context.HttpContext.Request.Method;
       if (string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase) ||
