@@ -31,12 +31,7 @@ function cambiarTab(tab) {
   }
 
   // Limpiar campos de búsqueda
-  document.getElementById("tipoBusqueda").value = "Seleccione";
-  document.getElementById("numeroDocumento").value = "";
-  if (document.getElementById("fechaInicio"))
-    document.getElementById("fechaInicio").value = "";
-  if (document.getElementById("fechaFin"))
-    document.getElementById("fechaFin").value = "";
+  limpiarCamposFiltro();
 
   // Cargar datos según el tab
   if (tab === "por-triar") {
@@ -46,6 +41,33 @@ function cambiarTab(tab) {
   } else if (tab === "triados") {
     cargarPacientesTriados();
   }
+}
+
+// Limpiar filtros y recargar datos
+function limpiarFiltros() {
+  console.log("Limpiando filtros y recargando datos...");
+
+  // Limpiar campos
+  limpiarCamposFiltro();
+
+  // Recargar datos según el tab actual
+  if (tabActual === "por-triar") {
+    cargarPacientesPorTriar();
+  } else if (tabActual === "fuera-horario") {
+    cargarPacientesFueraHorario();
+  } else if (tabActual === "triados") {
+    cargarPacientesTriados();
+  }
+}
+
+// Función auxiliar para limpiar campos del filtro
+function limpiarCamposFiltro() {
+  document.getElementById("tipoBusqueda").value = "";
+  document.getElementById("numeroDocumento").value = "";
+  if (document.getElementById("fechaInicio"))
+    document.getElementById("fechaInicio").value = "";
+  if (document.getElementById("fechaFin"))
+    document.getElementById("fechaFin").value = "";
 }
 
 // Buscar pacientes
@@ -162,7 +184,7 @@ async function buscarTriajes(tipoDoc, numeroDoc, fechaInicio, fechaFin) {
       url += `fechaFin=${encodeURIComponent(fechaFin)}&`;
     }
 
-    url = url.slice(0, -1); // Quitar el último &
+    url = url.slice(0, -1);
     console.log("URL:", url);
 
     const res = await fetch(url);
@@ -186,8 +208,9 @@ async function buscarTriajes(tipoDoc, numeroDoc, fechaInicio, fechaFin) {
     renderizarTabla([], "editar");
   }
 }
+
 async function guardarTriaje(event) {
-  event.preventDefault(); // ✅ IMPORTANTE: Evita que el form se recargue
+  event.preventDefault();
   console.log("Guardando triaje...");
   try {
     const formData = {
@@ -228,6 +251,7 @@ async function guardarTriaje(event) {
     alert("Error al guardar el triaje");
   }
 }
+
 // Cargar pacientes por triar
 async function cargarPacientesPorTriar() {
   console.log("Llamando a /citas/pendientesportriage...");
@@ -286,7 +310,7 @@ async function cargarPacientesTriados() {
   }
 }
 
-// Renderizar tabla (sin cambios)
+// Renderizar tabla
 function renderizarTabla(data, tipo) {
   console.log("Renderizando:", data?.length, "registros, tipo:", tipo);
   const tbody = document.getElementById("tablaPacientesBody");
@@ -350,12 +374,11 @@ function irARegistrarTriaje(idPaciente) {
 
 // Ir a editar triaje
 function irAEditarTriaje(idTriaje) {
-  // ✅ Solo recibir idTriaje
   console.log("Redirigiendo a editar triaje:", idTriaje);
   window.location.href = `/triaje/editar/${idTriaje}`;
 }
 
-// Paginación (por implementar)
+// Paginación
 function cambiarPagina(direccion) {
   console.log("Cambiar página:", direccion);
 }

@@ -52,8 +52,18 @@ namespace SGMG.Controllers
     [Route("/triaje/registrar")]
     public async Task<IActionResult> Registrar()
     {
-      await CargarDatosEnfermera();
-      return View();
+      try
+      {
+
+        await CargarDatosEnfermera();
+        return View();
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError($"Error en Triaje/Registrar: {ex.Message}");
+        ViewBag.ErrorMessage = "Error del sistema. No se pudo iniciar el triaje. Por favor, contacte a soporte técnico.";
+        return View("Error3");
+      }
     }
 
     [Authorize(Roles = "ENFERMERIA")]

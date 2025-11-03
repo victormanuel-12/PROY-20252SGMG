@@ -10,7 +10,27 @@
   margin-left: auto;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+.btn-clear {
+  padding: 10px 20px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
 
+.btn-clear:hover {
+  background-color: #5a6268;
+}
+
+.btn-clear i {
+  font-size: 16px;
+}
 .bienvenida-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);

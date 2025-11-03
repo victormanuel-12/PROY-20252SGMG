@@ -13,7 +13,7 @@
             @if (ViewData["NombreEnfermera"] != null)
             {
                 var nombre = ViewData["NombreEnfermera"].ToString();
-                var genero = ViewData["GeneroEnfermera"]?.ToString(); // "F" o "M"
+                var genero = ViewData["GeneroEnfermera"]?.ToString();
                 var saludo = genero == "F" ? "Bienvenida" : "Bienvenido";
                 var icono = genero == "F" ? "👩‍⚕️" : "👨‍⚕️";
                 var consultorioInfo = ViewData["ConsultorioInfo"]?.ToString();
@@ -37,88 +37,86 @@
     </div>
 </div>
 
+<br>
+<h2>Listado de pacientes</h2>
 
+<!-- Tabs -->
+<div class="tabs-container">
+    <button class="tab-btn active" id="tab-por-triar" onclick="cambiarTab('por-triar')">
+        Pacientes por triar
+    </button>
+    <button class="tab-btn" id="tab-fuera-horario" onclick="cambiarTab('fuera-horario')">
+        Pacientes por triar (fuera de horario)
+    </button>
+    <button class="tab-btn" id="tab-triados" onclick="cambiarTab('triados')">
+        Pacientes ya triados
+    </button>
+</div>
 
-
-
-        <br>
-        <h2 >Listado de pacientes</h2>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tabs-container">
-        <button class="tab-btn active" id="tab-por-triar" onclick="cambiarTab('por-triar')">
-            Pacientes por triar
-        </button>
-        <button class="tab-btn" id="tab-fuera-horario" onclick="cambiarTab('fuera-horario')">
-            Pacientes por triar (fuera de horario)
-        </button>
-        <button class="tab-btn" id="tab-triados" onclick="cambiarTab('triados')">
-            Pacientes ya triados
-        </button>
-    </div>
-
-    <!-- Búsqueda -->
-    <div class="search-section">
-        <form id="formBusqueda" onsubmit="buscarPacientes(event)">
-            <div class="search-grid">
-                <div class="form-group">
-                    <label for="tipoBusqueda">Tipo búsqueda <i class="fas fa-question-circle" title="Seleccione el tipo de documento"></i></label>
-                    <select id="tipoBusqueda" name="tipoBusqueda">
-                        <option value="">Seleccione</option>
-                        <option value="DNI">DNI</option>
-                        <option value="CE">CE</option>
-                        <option value="Pasaporte">Pasaporte</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="numeroDocumento">Número documento</label>
-                    <input type="text" id="numeroDocumento" name="numeroDocumento" placeholder="Ingrese número">
-                </div>
-                <div class="form-group" id="fechaInicioGroup">
-                    <label for="fechaInicio">Inicio</label>
-                    <input type="date" id="fechaInicio" name="fechaInicio">
-                </div>
-                <div class="form-group" id="fechaFinGroup">
-                    <label for="fechaFin">Fin</label>
-                    <input type="date" id="fechaFin" name="fechaFin">
-                </div>
-                <button type="submit" class="btn-search">
-                    <i class="fas fa-search"></i>
-                    Buscar
-                </button>
+<!-- Búsqueda -->
+<div class="search-section">
+    <form id="formBusqueda" onsubmit="buscarPacientes(event)">
+        <div class="search-grid">
+            <div class="form-group">
+                <label for="tipoBusqueda">Tipo búsqueda <i class="fas fa-question-circle" title="Seleccione el tipo de documento"></i></label>
+                <select id="tipoBusqueda" name="tipoBusqueda">
+                    <option value="">Seleccione</option>
+                    <option value="DNI">DNI</option>
+                    <option value="CE">CE</option>
+                    <option value="Pasaporte">Pasaporte</option>
+                </select>
             </div>
-        </form>
-    </div>
+            <div class="form-group">
+                <label for="numeroDocumento">Número documento</label>
+                <input type="text" id="numeroDocumento" name="numeroDocumento" placeholder="Ingrese número">
+            </div>
+            <div class="form-group" id="fechaInicioGroup">
+                <label for="fechaInicio">Inicio</label>
+                <input type="date" id="fechaInicio" name="fechaInicio">
+            </div>
+            <div class="form-group" id="fechaFinGroup">
+                <label for="fechaFin">Fin</label>
+                <input type="date" id="fechaFin" name="fechaFin">
+            </div>
+            <button type="submit" class="btn-search">
+                <i class="fas fa-search"></i>
+                Buscar
+            </button>
+            <button type="button" class="btn-clear" onclick="limpiarFiltros()">
+                <i class="fas fa-eraser"></i>
+                Limpiar
+            </button>
+        </div>
+    </form>
+</div>
 
-    <!-- Tabla -->
-    <div class="table-container">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Documento</th>
-                    <th>Nombre paciente</th>
-                    <th>Consultorio</th>
-                    <th>Hora de cita</th>
-                    <th>Fecha de cita</th>
-                    <th>Médico</th>
-                    <th id="columnAction">Acción</th>
-                </tr>
-            </thead>
-            <tbody id="tablaPacientesBody">
-                <tr>
-                    <td colspan="7" class="no-data">Use los filtros para buscar pacientes</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+<!-- Tabla -->
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Documento</th>
+                <th>Nombre paciente</th>
+                <th>Consultorio</th>
+                <th>Hora de cita</th>
+                <th>Fecha de cita</th>
+                <th>Médico</th>
+                <th id="columnAction">Acción</th>
+            </tr>
+        </thead>
+        <tbody id="tablaPacientesBody">
+            <tr>
+                <td colspan="7" class="no-data">Use los filtros para buscar pacientes</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
 
-    <!-- Paginación -->
-    <div class="pagination" id="paginacion" style="display:none;">
-        <button onclick="cambiarPagina('anterior')"><i class="fas fa-chevron-left"></i> Anterior</button>
-        <span id="paginaActual">1</span>
-        <button onclick="cambiarPagina('siguiente')">Siguiente <i class="fas fa-chevron-right"></i></button>
-    </div>
+<!-- Paginación -->
+<div class="pagination" id="paginacion" style="display:none;">
+    <button onclick="cambiarPagina('anterior')"><i class="fas fa-chevron-left"></i> Anterior</button>
+    <span id="paginaActual">1</span>
+    <button onclick="cambiarPagina('siguiente')">Siguiente <i class="fas fa-chevron-right"></i></button>
 </div>
 
 @section Scripts {

@@ -67,7 +67,7 @@ namespace SGMG.Repository.RepositoryImpl
         var citas = await _context.Citas
             .Include(c => c.Paciente)
             .Include(c => c.Medico)
-            .Where(c => (c.EstadoCita == "Confirmada")
+            .Where(c => (c.EstadoCita == "Pagado" || c.EstadoCita == "Confirmada")
                  && c.FechaCita.Date < ahora.Date)
             .ToListAsync();
 
