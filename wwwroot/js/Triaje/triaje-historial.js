@@ -93,12 +93,13 @@ function mostrarHistorialTriajes() {
     return;
   }
 
-  // Calcular paginación
-  const inicio = (paginaActual - 1) * itemsPorPagina;
-  const fin = inicio + itemsPorPagina;
-  const triajesPagina = triajesData.slice(inicio, fin);
+  try {
+    // Calcular paginación
+    const inicio = (paginaActual - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    const triajesPagina = triajesData.slice(inicio, fin);
 
-  const tabla = `
+    const tabla = `
         <table class="triaje-table">
             <thead>
                 <tr>
@@ -111,13 +112,16 @@ function mostrarHistorialTriajes() {
             </thead>
             <tbody>
                 ${triajesPagina
-                  .map(
-                    (triaje, index) => `
+                  .map((triaje, index) => {
+                    try {
+                      return `
                     <tr>
-                        <td><strong>${triaje.codigoTriaje}</strong></td>
-                        <td>${triaje.fechaHora}</td>
-                        <td>${triaje.presionArterial}</td>
-                        <td>${triaje.temperatura}</td>
+                        <td><strong>${
+                          triaje.codigoTriaje || "N/A"
+                        }</strong></td>
+                        <td>${triaje.fechaHora || "N/A"}</td>
+                        <td>${triaje.presionArterial || "N/A"}</td>
+                        <td>${triaje.temperatura || "N/A"}</td>
                         <td>
                             <button class="btn-details" onclick="toggleDetalles(${
                               inicio + index
@@ -130,7 +134,7 @@ function mostrarHistorialTriajes() {
                         <td colspan="5">
                             <div class="triaje-details active">
                                 <h3 class="details-title">Detalles del Triaje ${
-                                  triaje.codigoTriaje
+                                  triaje.codigoTriaje || "N/A"
                                 }</h3>
                                 <div class="details-grid">
                                     <div class="details-section">
@@ -138,25 +142,28 @@ function mostrarHistorialTriajes() {
                                         <div class="details-row">
                                             <span class="details-label">Temperatura (°C):</span>
                                             <span class="details-value">${
-                                              triaje.signos.temperatura
+                                              triaje.signos?.temperatura ||
+                                              "N/A"
                                             }</span>
                                         </div>
                                         <div class="details-row">
                                             <span class="details-label">Presión arterial:</span>
                                             <span class="details-value">${
-                                              triaje.signos.presionArterial
+                                              triaje.signos?.presionArterial ||
+                                              "N/A"
                                             }/80 mmHg</span>
                                         </div>
                                         <div class="details-row">
                                             <span class="details-label">Frecuencia cardiaca:</span>
                                             <span class="details-value">${
-                                              triaje.signos.frecuenciaCardiaca
+                                              triaje.signos
+                                                ?.frecuenciaCardiaca || "N/A"
                                             } lpm</span>
                                         </div>
                                         <div class="details-row">
                                             <span class="details-label">Saturación O₂:</span>
                                             <span class="details-value">${
-                                              triaje.signos.saturacion
+                                              triaje.signos?.saturacion || "N/A"
                                             }%</span>
                                         </div>
                                     </div>
@@ -166,22 +173,24 @@ function mostrarHistorialTriajes() {
                                         <div class="details-row">
                                             <span class="details-label">Peso (kg):</span>
                                             <span class="details-value">${
-                                              triaje.medidas.peso
+                                              triaje.medidas?.peso || "N/A"
                                             }</span>
                                         </div>
                                         <div class="details-row">
                                             <span class="details-label">Talla (cm):</span>
                                             <span class="details-value">${
-                                              triaje.medidas.talla
+                                              triaje.medidas?.talla || "N/A"
                                             }</span>
                                         </div>
                                         <div class="details-row">
                                             <span class="details-label">IMC:</span>
                                             <span class="details-value">${
-                                              triaje.medidas.imc
-                                            } (${
-                      triaje.medidas.imcClasificacion
-                    })</span>
+                                              triaje.medidas?.imc || "N/A"
+                                            } ${
+                        triaje.medidas?.imcClasificacion
+                          ? `(${triaje.medidas.imcClasificacion})`
+                          : ""
+                      }</span>
                                         </div>
                                     </div>
 
@@ -190,19 +199,20 @@ function mostrarHistorialTriajes() {
                                         <div class="details-row">
                                             <span class="details-label">Fecha:</span>
                                             <span class="details-value">${
-                                              triaje.informacion.fecha
+                                              triaje.informacion?.fecha || "N/A"
                                             }</span>
                                         </div>
                                         <div class="details-row">
                                             <span class="details-label">Hora:</span>
                                             <span class="details-value">${
-                                              triaje.informacion.hora
+                                              triaje.informacion?.hora || "N/A"
                                             }</span>
                                         </div>
                                         <div class="details-row">
                                             <span class="details-label">Realizado por:</span>
                                             <span class="details-value">${
-                                              triaje.informacion.realizadoPor
+                                              triaje.informacion
+                                                ?.realizadoPor || "N/A"
                                             }</span>
                                         </div>
                                     </div>
@@ -221,19 +231,54 @@ function mostrarHistorialTriajes() {
                             </div>
                         </td>
                     </tr>
-                `
-                  )
+                `;
+                    } catch (error) {
+                      console.error(
+                        `Error al renderizar triaje en índice ${index}:`,
+                        error
+                      );
+                      return `
+                    <tr>
+                        <td colspan="5" class="text-center" style="padding: 20px; color: #dc2626;">
+                            Error al mostrar este registro
+                        </td>
+                    </tr>
+                `;
+                    }
+                  })
                   .join("")}
             </tbody>
         </table>
         ${renderizarPaginacion()}
     `;
 
-  container.innerHTML = tabla;
+    container.innerHTML = tabla;
+  } catch (error) {
+    console.error("Error al renderizar historial de triajes:", error);
+    container.innerHTML = `
+      <div class="no-data">
+          <div class="no-data-icon">⚠️</div>
+          <p>Error al mostrar el historial de triajes</p>
+      </div>
+    `;
+    showError(
+      "No se pudieron cargar los detalles para este triaje. Intente nuevamente."
+    );
+  }
 }
 
 function toggleDetalles(index) {
   const detalleRow = document.getElementById(`detalles-${index}`);
+
+  // Verificar si el triaje tiene los datos completos
+  const triaje = triajesData[index];
+  if (!triaje || !triaje.signos || !triaje.medidas || !triaje.informacion) {
+    showError(
+      "No se pudieron cargar los detalles para este triaje. Intente nuevamente."
+    );
+    return;
+  }
+
   if (detalleRow.style.display === "none") {
     // Cerrar todos los demás detalles
     document.querySelectorAll('[id^="detalles-"]').forEach((row) => {
@@ -309,7 +354,7 @@ function showError(message) {
   mostrarModal(message, "error");
 }
 
-function mostrarModal(message, type = "error") {
+function mostrarModal(message, type) {
   // Crear el overlay del modal
   const modalOverlay = document.createElement("div");
   modalOverlay.className = "modal-overlay";
@@ -329,7 +374,7 @@ function mostrarModal(message, type = "error") {
 
   // Crear el modal
   const modal = document.createElement("div");
-  modal.className = `modal-message ${type}`;
+  modal.className = "modal-message " + type;
   modal.style.cssText = `
     background: white;
     padding: 30px;
@@ -373,27 +418,26 @@ function mostrarModal(message, type = "error") {
     </button>
   `;
 
-  // Agregar estilos de animación
-  const style = document.createElement("style");
-  style.textContent = `
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-  `;
-
+  // Agregar estilos de animación si no existen
   if (!document.querySelector("style[data-modal-animations]")) {
+    const style = document.createElement("style");
     style.setAttribute("data-modal-animations", "true");
+    style.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    `;
     document.head.appendChild(style);
   }
 
