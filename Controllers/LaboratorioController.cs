@@ -192,6 +192,7 @@ namespace SGMG.Controllers
     {
       try
       {
+
         var response = await _laboratorioService.ActualizarResultadosAsync(dto);
         return Ok(new
         {
@@ -204,7 +205,7 @@ namespace SGMG.Controllers
         return Ok(new
         {
           success = false,
-          message = $"Error al actualizar resultados: {ex.Message}"
+          message = "No se pudo cargar la información de la orden de exámen. Por favor, regrese e intente nuevamente."
         });
       }
     }
