@@ -135,6 +135,46 @@
     </form>
 </div>
 
+<!-- Modal de Error -->
+<div id="derivacionModalError" class="deriv-modal-overlay">
+    <div class="deriv-modal-container">
+        <div class="deriv-modal-header">
+            <div class="deriv-modal-icon">⚠️</div>
+            <h2 class="deriv-modal-title">Error al Guardar</h2>
+        </div>
+        <div class="deriv-modal-body">
+            <p class="deriv-modal-message" id="derivacionModalErrorMessage">
+                No se pudo registrar la derivación. Por favor, intente nuevamente.
+            </p>
+        </div>
+        <div class="deriv-modal-footer">
+            <button type="button" class="deriv-modal-btn deriv-modal-btn-primary" onclick="cerrarModalDerivacion()">
+                Entendido
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Éxito -->
+<div id="derivacionModalSuccess" class="deriv-modal-overlay">
+    <div class="deriv-modal-container">
+        <div class="deriv-modal-header success">
+            <div class="deriv-modal-icon">✓</div>
+            <h2 class="deriv-modal-title">Derivación Registrada</h2>
+        </div>
+        <div class="deriv-modal-body">
+            <p class="deriv-modal-message" id="derivacionModalSuccessMessage">
+                Derivación creada exitosamente.
+            </p>
+        </div>
+        <div class="deriv-modal-footer">
+            <button type="button" class="deriv-modal-btn deriv-modal-btn-success" onclick="cerrarModalSuccessDerivacion()">
+                Aceptar
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('derivacionForm');
@@ -144,39 +184,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const idCitaOrigen = document.getElementById('IdCitaOrigen').value;
     const idMedicoDestino = document.getElementById('IdMedicoDestino').value;
 
-    // Función para crear el contenedor de alertas si no existe
-    function crearAlertContainer() {
-        let container = document.getElementById('alertContainer');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'alertContainer';
-            document.body.appendChild(container);
-        }
-        return container;
-    }
-
-    // Función para mostrar alerta personalizada
-    function mostrarAlerta(mensaje, tipo = 'error') {
-      
-        
-        const alert = document.createElement('div');
-        alert.className = `alert alert-${tipo}`;
-        alert.innerHTML = `
-            <i class="fas fa-${tipo === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-            <span>${mensaje}</span>
-            <button class="alert-close" onclick="this.parentElement.remove()">×</button>
-        `;
-        
-        alertContainer.appendChild(alert);
-        
-        // Auto-cerrar después de 5 segundos
-        setTimeout(() => {
-            if (alert.parentElement) {
-                alert.remove();
-            }
-        }, 5000);
-    }
-
     // Validación del formulario al enviar
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -185,7 +192,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
         document.querySelectorAll('.form-control').forEach(el => el.classList.remove('error'));
         
-        let errores = [];
         let hasErrors = false;
         
         // Validación 1: Especialidad
@@ -193,7 +199,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!especialidad || especialidad === '') {
             document.getElementById('errorEspecialidad').classList.add('show');
             especialidadSelect.classList.add('error');
-            errores.push('Debe seleccionar una especialidad');
             hasErrors = true;
         }
         
@@ -201,7 +206,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const prioridadRadio = document.querySelector('input[name="Prioridad"]:checked');
         if (!prioridadRadio) {
             document.getElementById('errorPrioridad').classList.add('show');
-            errores.push('Debe seleccionar una prioridad');
             hasErrors = true;
         }
         
@@ -210,24 +214,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!motivo) {
             document.getElementById('errorMotivo').classList.add('show');
             motivoTextarea.classList.add('error');
-            errores.push('El motivo de la derivación es un campo requerido');
             hasErrors = true;
         }
         
-        // Si hay errores, mostrar alertas y hacer scroll
+        // Si hay errores, hacer scroll al primer campo con error
         if (hasErrors) {
-            // Mostrar todas las alertas
-            errores.forEach(error => {
-                mostrarAlerta(error, 'error');
-            });
-            
-            // Scroll al primer campo con error
             const firstError = document.querySelector('.form-control.error');
             if (firstError) {
                 firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 firstError.focus();
             }
-            
             return false;
         }
         
@@ -245,8 +241,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 IdMedicoDestino: idMedicoDestino ? parseInt(idMedicoDestino) : null
             };
             
-            console.log('Enviando datos:', data);
-            
             // Enviar con fetch
             const response = await fetch('/Derivacion/Create', {
                 method: 'POST',
@@ -256,35 +250,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify(data)
             });
             
-            console.log('Status de respuesta:', response.status);
-            
-            // Si hay error del servidor, intentar leer el texto de error
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Error del servidor:', errorText);
-                throw new Error(`Error del servidor (${response.status}): ${errorText.substring(0, 100)}`);
-            }
-            
             const result = await response.json();
-            console.log('Resultado JSON:', result);
             
             if (result.success) {
-                mostrarAlerta(result.message, 'success');
-                
-                // Redirigir después de 2 segundos
-                setTimeout(() => {
-                    window.location.href = result.redirectUrl || '/Home/Index';
-                }, 2000);
+                mostrarModalSuccessDerivacion(result.message);
+                btnGuardar.disabled = false;
+                btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar Derivación';
             } else {
-                mostrarAlerta(result.message, 'error');
+                mostrarModalErrorDerivacion(result.message);
                 btnGuardar.disabled = false;
                 btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar Derivación';
             }
             
         } catch (error) {
             console.error('Error completo:', error);
-            const mensajeError = error.message || 'Error de conexión. Por favor, intente nuevamente.';
-            mostrarAlerta(mensajeError, 'error');
+            mostrarModalErrorDerivacion('No se pudo registrar la derivación. Por favor, intente nuevamente.');
             btnGuardar.disabled = false;
             btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar Derivación';
         }
@@ -329,6 +309,46 @@ document.addEventListener('DOMContentLoaded', function() {
         contador.style.color = remaining < 50 ? 'var(--danger-color)' : '#7f8c8d';
     });
 });
+
+function mostrarModalErrorDerivacion(mensaje) {
+    const modal = document.getElementById('derivacionModalError');
+    const modalMessage = document.getElementById('derivacionModalErrorMessage');
+    
+    if (modalMessage && mensaje) {
+        modalMessage.textContent = mensaje;
+    }
+    
+    if (modal) {
+        modal.classList.add('deriv-modal-active');
+    }
+}
+
+function cerrarModalDerivacion() {
+    const modal = document.getElementById('derivacionModalError');
+    if (modal) {
+        modal.classList.remove('deriv-modal-active');
+    }
+}
+
+function mostrarModalSuccessDerivacion(mensaje) {
+    const modal = document.getElementById('derivacionModalSuccess');
+    const modalMessage = document.getElementById('derivacionModalSuccessMessage');
+    
+    if (modalMessage && mensaje) {
+        modalMessage.textContent = mensaje;
+    }
+    
+    if (modal) {
+        modal.classList.add('deriv-modal-active');
+    }
+}
+
+function cerrarModalSuccessDerivacion() {
+    const modal = document.getElementById('derivacionModalSuccess');
+    if (modal) {
+        modal.classList.remove('deriv-modal-active');
+    }
+}
 </script>
 
 @section Styles {
@@ -353,5 +373,110 @@ document.addEventListener('DOMContentLoaded', function() {
         border-color: var(--danger-color);
         box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25);
     }
+
+    /* Estilos del Modal */
+    .deriv-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 99999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .deriv-modal-overlay.deriv-modal-active {
+        display: flex !important;
+    }
+
+    .deriv-modal-container {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 90%;
+        overflow: hidden;
+    }
+
+    .deriv-modal-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .deriv-modal-header.success {
+        background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+    }
+
+    .deriv-modal-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .deriv-modal-title {
+        color: white;
+        font-size: 22px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .deriv-modal-body {
+        padding: 32px 24px;
+    }
+
+    .deriv-modal-message {
+        color: #495057;
+        font-size: 16px;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .deriv-modal-footer {
+        padding: 0 24px 24px 24px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .deriv-modal-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .deriv-modal-btn-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+    }
+
+    .deriv-modal-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+    }
+
+    .deriv-modal-btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        color: white;
+    }
+
+    .deriv-modal-btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    }
 </style>
-}
+}</document_content>

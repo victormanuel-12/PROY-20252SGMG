@@ -54,6 +54,7 @@ namespace SGMG.Controllers
     {
       try
       {
+
         Console.WriteLine("=== INICIO POST CREATE ===");
         Console.WriteLine($"Request recibido: IdCita={request?.IdCitaOrigen}, Especialidad={request?.EspecialidadDestino}");
 
@@ -119,7 +120,7 @@ namespace SGMG.Controllers
           Console.WriteLine($"InnerException: {ex.InnerException.Message}");
         }
 
-        return Json(new { success = false, message = $"Error al guardar la derivación: {ex.Message}" });
+        return Json(new { success = false, message = "No se pudo registrar la derivación. Por favor, intente nuevamente." });
       }
     }
 
