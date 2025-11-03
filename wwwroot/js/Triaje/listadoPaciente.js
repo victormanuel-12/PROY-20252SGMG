@@ -278,10 +278,14 @@ async function cargarPacientesTriados() {
     if (result.success && result.data) {
       renderizarTabla(result.data, "editar");
     } else {
+      // ✅ MOSTRAR MENSAJE DE ERROR ESPECÍFICO
+      alert(result.message || "No se pudo cargar la lista de pacientes. Por favor, intente nuevamente");
       renderizarTabla([], "editar");
     }
   } catch (error) {
     console.error("Error:", error);
+    // ✅ MOSTRAR MENSAJE DE ERROR ESPECÍFICO
+    alert("No se pudo cargar la lista de pacientes. Por favor, intente nuevamente");
     renderizarTabla([], "editar");
   }
 }
@@ -295,6 +299,34 @@ function renderizarTabla(data, tipo) {
     tbody.innerHTML =
       '<tr><td colspan="7" class="no-data">No hay datos disponibles</td></tr>';
     return;
+  }
+
+    if (tipo === "editar") {
+    tbody.innerHTML = data
+      .map((item) => {
+        const fechaFormateada = item.fechaCita
+          ? new Date(item.fechaCita).toLocaleDateString("es-PE")
+          : "-";
+        
+        // ✅ NUEVA VALIDACIÓN: Solo mostrar botón si no está atendido
+        const puedeEditar = item.estadoCita !== "Atendida" && item.estadoCita !== "Finalizada";
+        const botonEditar = puedeEditar 
+          ? `<button class="btn-action btn-editar" onclick="irAEditarTriaje(${item.idTriaje})">Editar</button>`
+          : `<span class="badge bg-secondary">Atendido</span>`;
+
+        return `
+          <tr>
+            <td>${item.numeroDocumento || ""}</td>
+            <td>${item.nombreCompletoPaciente || ""}</td>
+            <td>${item.consultorio || ""}</td>
+            <td>${item.horaCita || ""}</td>
+            <td>${fechaFormateada}</td>
+            <td>${item.nombreCompletoMedico || ""}</td>
+            <td>${botonEditar}</td>
+          </tr>
+        `;
+      })
+      .join("");
   }
 
   if (tipo === "editar") {

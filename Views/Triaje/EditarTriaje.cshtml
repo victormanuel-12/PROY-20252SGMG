@@ -181,7 +181,7 @@
                                 <i class="fas fa-times"></i> Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Guardar Cambios
+                                <i class="fas fa-save"></i> Registrar Triaje
                             </button>
                         </div>
                     </div>
@@ -218,21 +218,163 @@
         document.getElementById('Peso').addEventListener('input', calcularIMC);
         document.getElementById('Talla').addEventListener('input', calcularIMC);
 
-        // Validación del formulario
+        // ✅ MEJORADO: Validación sin alertas y sin validación HTML5
         document.getElementById('triajeForm').addEventListener('submit', function(e) {
+            // Limpiar errores anteriores
+            document.querySelectorAll('.is-invalid').forEach(el => {
+                el.classList.remove('is-invalid');
+            });
+            
+            document.querySelectorAll('.invalid-feedback').forEach(el => {
+                el.remove();
+            });
+
+            let isValid = true;
+
+            // ✅ DEFINIR RANGOS VÁLIDOS PARA CADA CAMPO
+            const fieldRanges = {
+                'Temperatura': { min: 35, max: 42, label: 'Temperatura', unit: '°C' },
+                'PresionArterial': { min: 60, max: 200, label: 'Presión Arterial', unit: '' },
+                'Saturacion': { min: 70, max: 100, label: 'Saturación O2', unit: '%' },
+                'FrecuenciaCardiaca': { min: 40, max: 180, label: 'Frecuencia Cardíaca', unit: 'lpm' },
+                'FrecuenciaRespiratoria': { min: 8, max: 40, label: 'Frecuencia Respiratoria', unit: 'rpm' },
+                'Peso': { min: 2, max: 200, label: 'Peso', unit: 'kg' },
+                'Talla': { min: 0.5, max: 2.5, label: 'Talla', unit: 'm' },
+                'PerimAbdominal': { min: 40, max: 150, label: 'Perímetro Abdominal', unit: 'cm' },
+                'SuperficieCorporal': { min: 0.5, max: 3.0, label: 'Superficie Corporal', unit: 'm²' }
+            };
+
+            // Validar campos obligatorios y rangos
+            Object.keys(fieldRanges).forEach(fieldName => {
+                const input = document.querySelector(`[name="${fieldName}"]`);
+                const range = fieldRanges[fieldName];
+                
+                if (input && input.value.trim()) {
+                    const value = parseFloat(input.value);
+                    
+                    // Validar rango
+                    if (isNaN(value) || value < range.min || value > range.max) {
+                        input.classList.add('is-invalid');
+                        showFieldError(input, 
+                            `El valor debe estar entre ${range.min} y ${range.max} ${range.unit}`
+                        );
+                        isValid = false;
+                    }
+                } else if (input && (!input.value.trim() || input.value.trim() === '0')) {
+                    // Validar campo obligatorio
+                    input.classList.add('is-invalid');
+                    showFieldError(input, `El campo "${range.label}" es obligatorio`);
+                    isValid = false;
+                }
+            });
+
+            // Validación específica de talla (adicional)
             const peso = parseFloat(document.getElementById('Peso').value);
             const talla = parseFloat(document.getElementById('Talla').value);
             
             if (peso > 0 && talla > 0 && (talla < 0.5 || talla > 2.5)) {
+                const tallaInput = document.getElementById('Talla');
+                tallaInput.classList.add('is-invalid');
+                showFieldError(tallaInput, 'La talla debe estar entre 0.5 y 2.5 metros');
+                isValid = false;
+            }
+
+            if (!isValid) {
                 e.preventDefault();
-                alert('La talla debe estar entre 0.5 y 2.5 metros');
+                // Enfocar en el primer campo con error
+                const firstError = document.querySelector('.is-invalid');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
                 return false;
             }
+        });
+
+        // ✅ FUNCIÓN PARA MOSTRAR ERRORES DEBAJO DEL CAMPO
+        function showFieldError(input, message) {
+            // Crear elemento de error si no existe
+            let errorElement = input.parentNode.querySelector('.invalid-feedback');
+            if (!errorElement) {
+                errorElement = document.createElement('div');
+                errorElement.className = 'invalid-feedback';
+                input.parentNode.appendChild(errorElement);
+            }
+            errorElement.textContent = message;
+        }
+
+        // ✅ Validación en tiempo real para rangos
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('blur', function() {
+                const fieldName = this.name;
+                const ranges = {
+                    'Temperatura': { min: 35, max: 42, unit: '°C' },
+                    'PresionArterial': { min: 60, max: 200, unit: '' },
+                    'Saturacion': { min: 70, max: 100, unit: '%' },
+                    'FrecuenciaCardiaca': { min: 40, max: 180, unit: 'lpm' },
+                    'FrecuenciaRespiratoria': { min: 8, max: 40, unit: 'rpm' },
+                    'Peso': { min: 2, max: 200, unit: 'kg' },
+                    'Talla': { min: 0.5, max: 2.5, unit: 'm' },
+                    'PerimAbdominal': { min: 40, max: 150, unit: 'cm' },
+                    'SuperficieCorporal': { min: 0.5, max: 3.0, unit: 'm²' }
+                };
+
+                if (this.value.trim()) {
+                    const value = parseFloat(this.value);
+                    const range = ranges[fieldName];
+                    
+                    if (range && (isNaN(value) || value < range.min || value > range.max)) {
+                        this.classList.add('is-invalid');
+                        showFieldError(this, 
+                            `El valor debe estar entre ${range.min} y ${range.max} ${range.unit}`
+                        );
+                    } else {
+                        this.classList.remove('is-invalid');
+                        const errorElement = this.parentNode.querySelector('.invalid-feedback');
+                        if (errorElement) {
+                            errorElement.remove();
+                        }
+                    }
+                }
+            });
+
+            input.addEventListener('input', function() {
+                // Limpiar error cuando el usuario empiece a escribir
+                this.classList.remove('is-invalid');
+                const errorElement = this.parentNode.querySelector('.invalid-feedback');
+                if (errorElement) {
+                    errorElement.remove();
+                }
+            });
+
+            // ✅ DESHABILITAR VALIDACIÓN HTML5
+            input.addEventListener('invalid', function(e) {
+                e.preventDefault();
+            });
         });
 
         // Calcular IMC al cargar la página si hay valores
         document.addEventListener('DOMContentLoaded', function() {
             calcularIMC();
+            
+            // ✅ DESHABILITAR VALIDACIÓN HTML5 EN TODOS LOS CAMPOS
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.setAttribute('formnovalidate', 'true');
+            });
         });
     </script>
 }
+
+<style>
+.is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+.invalid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #dc3545;
+}
+</style>
