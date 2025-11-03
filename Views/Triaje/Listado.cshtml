@@ -7,22 +7,6 @@
     <link rel="stylesheet" href="~/css/Triaje.css" asp-append-version="true" />
 }
 
-<!-- ✅ MOSTRAR MENSAJES DE ERROR -->
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
 <div class="page-container">
     <div class="page-title-container">
         <div class="bienvenida-card">
@@ -84,6 +68,7 @@
                         <option value="">Seleccione</option>
                         <option value="DNI">DNI</option>
                         <option value="CE">CE</option>
+                        <option value="Pasaporte">Pasaporte</option>
                     </select>
                 </div>
                 <div class="form-group">

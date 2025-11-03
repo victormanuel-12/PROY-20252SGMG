@@ -81,84 +81,74 @@ namespace SGMG.Services.ServiceImpl
       }
     }
 
-public async Task<GenericResponse<TriajeResponseDTO>> GetTriajeByIdAsync(int id)
-{
-    try
+    public async Task<GenericResponse<TriajeResponseDTO>> GetTriajeByIdAsync(int id)
     {
+      try
+      {
         if (id <= 0)
-            return new GenericResponse<TriajeResponseDTO>(false, "No se pudieron cargar los datos del triaje. Por favor, intente nuevamente");
+          return new GenericResponse<TriajeResponseDTO>(false, "El ID del triaje no es válido.");
 
         var triaje = await _triajeRepository.GetTriajeByIdAsync(id);
 
         if (triaje == null)
-            return new GenericResponse<TriajeResponseDTO>(false, "No se pudieron cargar los datos del triaje. Por favor, intente nuevamente");
+          return new GenericResponse<TriajeResponseDTO>(false, "Triaje no encontrado.");
 
         // Mapear a DTO completo
         var triajeDTO = new TriajeResponseDTO
         {
-            // Datos del triaje
-            IdTriaje = triaje.IdTriage,
-            Temperatura = triaje.Temperatura,
-            PresionArterial = triaje.PresionArterial,
-            Saturacion = triaje.Saturacion,
-            FrecuenciaCardiaca = triaje.FrecuenciaCardiaca,
-            FrecuenciaRespiratoria = triaje.FrecuenciaRespiratoria,
-            Peso = triaje.Peso,
-            Talla = triaje.Talla,
-            PerimetroAbdominal = triaje.PerimetroAbdominal,
-            SuperficieCorporal = triaje.SuperficieCorporal,
-            Imc = triaje.Imc,
-            ClasificacionImc = triaje.ClasificacionImc,
-            RiesgoEnfermedad = triaje.RiesgoEnfermedad,
-            EstadoTriage = triaje.EstadoTriage,
-            FechaTriage = triaje.FechaTriage,
-            HoraTriage = triaje.HoraTriage,
-            Observaciones = triaje.Observaciones,
+          // Datos del triaje
+          IdTriaje = triaje.IdTriage,
+          Temperatura = triaje.Temperatura,
+          PresionArterial = triaje.PresionArterial,
+          Saturacion = triaje.Saturacion,
+          FrecuenciaCardiaca = triaje.FrecuenciaCardiaca,
+          FrecuenciaRespiratoria = triaje.FrecuenciaRespiratoria,
+          Peso = triaje.Peso,
+          Talla = triaje.Talla,
+          PerimetroAbdominal = triaje.PerimetroAbdominal,
+          SuperficieCorporal = triaje.SuperficieCorporal,
+          Imc = triaje.Imc,
+          ClasificacionImc = triaje.ClasificacionImc,
+          RiesgoEnfermedad = triaje.RiesgoEnfermedad,
+          EstadoTriage = triaje.EstadoTriage,
+          FechaTriage = triaje.FechaTriage,
+          HoraTriage = triaje.HoraTriage,
+          Observaciones = triaje.Observaciones,
 
-            // Datos del paciente (COMPLETOS)
-            IdPaciente = triaje.IdPaciente,
-            NumeroDocumento = triaje.Paciente?.NumeroDocumento ?? "",
-            TipoDocumento = triaje.Paciente?.TipoDocumento ?? "",
-            Nombre = triaje.Paciente?.Nombre ?? "",
-            ApellidoPaterno = triaje.Paciente?.ApellidoPaterno ?? "",
-            ApellidoMaterno = triaje.Paciente?.ApellidoMaterno ?? "",
-            Sexo = triaje.Paciente?.Sexo ?? "",
-            Edad = triaje.Paciente?.Edad ?? 0,
-            NombreCompletoPaciente = triaje.Paciente != null
-                  ? $"{triaje.Paciente.ApellidoPaterno} {triaje.Paciente.ApellidoMaterno} {triaje.Paciente.Nombre}".Trim()
-                  : ""
+          // Datos del paciente (COMPLETOS)
+          IdPaciente = triaje.IdPaciente,
+          NumeroDocumento = triaje.Paciente?.NumeroDocumento ?? "",
+          TipoDocumento = triaje.Paciente?.TipoDocumento ?? "",
+          Nombre = triaje.Paciente?.Nombre ?? "",
+          ApellidoPaterno = triaje.Paciente?.ApellidoPaterno ?? "",
+          ApellidoMaterno = triaje.Paciente?.ApellidoMaterno ?? "",
+          Sexo = triaje.Paciente?.Sexo ?? "",
+          Edad = triaje.Paciente?.Edad ?? 0,
+          NombreCompletoPaciente = triaje.Paciente != null
+                ? $"{triaje.Paciente.ApellidoPaterno} {triaje.Paciente.ApellidoMaterno} {triaje.Paciente.Nombre}".Trim()
+                : ""
         };
 
         return new GenericResponse<TriajeResponseDTO>(true, triajeDTO, "Triaje obtenido correctamente.");
-    }
-    catch (Exception ex)
-    {
+      }
+      catch (Exception ex)
+      {
         Console.WriteLine($"Error en GetTriajeByIdAsync: {ex.Message}");
-        return new GenericResponse<TriajeResponseDTO>(false, "No se pudieron cargar los datos del triaje. Por favor, intente nuevamente");
+        return new GenericResponse<TriajeResponseDTO>(false, $"Error: {ex.Message}");
+      }
     }
-}
 
-public async Task<GenericResponse<TriajeResponseDTO>> UpdateTriajeAsync(TriajeRequestDTO triajeRequestDTO)
-{
-    try
+    public async Task<GenericResponse<TriajeResponseDTO>> UpdateTriajeAsync(TriajeRequestDTO triajeRequestDTO)
     {
+      try
+      {
         if (triajeRequestDTO == null || triajeRequestDTO.IdPaciente <= 0)
-            return new GenericResponse<TriajeResponseDTO>(false, "Datos inválidos.");
-
-        // ✅ NUEVA VALIDACIÓN: Verificar que el paciente no haya sido atendido
-        var citaAtendida = await _context.Citas
-            .FirstOrDefaultAsync(c => c.IdPaciente == triajeRequestDTO.IdPaciente && 
-                                     (c.EstadoCita == "Atendida" || c.EstadoCita == "Finalizada"));
-        
-        if (citaAtendida != null)
-        {
-            return new GenericResponse<TriajeResponseDTO>(false, "No se puede editar el triaje de un paciente ya atendido");
-        }
+          return new GenericResponse<TriajeResponseDTO>(false, "Datos inválidos.");
 
         // Obtener triaje (incluye Paciente)
         var triaje = await _triajeRepository.GetTriajeByIdAsync(triajeRequestDTO.IdTriaje);
         if (triaje == null)
-            return new GenericResponse<TriajeResponseDTO>(false, "Triaje no encontrado.");
+          return new GenericResponse<TriajeResponseDTO>(false, "Triaje no encontrado.");
 
         // Guardar referencia al paciente
         var paciente = triaje.Paciente;
@@ -170,44 +160,44 @@ public async Task<GenericResponse<TriajeResponseDTO>> UpdateTriajeAsync(TriajeRe
         // Mapear a DTO (sin consulta adicional)
         var triajeDTO = new TriajeResponseDTO
         {
-            // Datos del triaje (actualizados)
-            IdTriaje = triaje.IdTriage,
-            Temperatura = triaje.Temperatura,
-            PresionArterial = triaje.PresionArterial,
-            Saturacion = triaje.Saturacion,
-            FrecuenciaCardiaca = triaje.FrecuenciaCardiaca,
-            FrecuenciaRespiratoria = triaje.FrecuenciaRespiratoria,
-            Peso = triaje.Peso,
-            Talla = triaje.Talla,
-            PerimetroAbdominal = triaje.PerimetroAbdominal,
-            SuperficieCorporal = triaje.SuperficieCorporal,
-            Imc = triaje.Imc,
-            ClasificacionImc = triaje.ClasificacionImc,
-            RiesgoEnfermedad = triaje.RiesgoEnfermedad,
-            EstadoTriage = triaje.EstadoTriage,
-            FechaTriage = triaje.FechaTriage,
-            HoraTriage = triaje.HoraTriage,
-            Observaciones = triaje.Observaciones,
+          // Datos del triaje (actualizados)
+          IdTriaje = triaje.IdTriage,
+          Temperatura = triaje.Temperatura,
+          PresionArterial = triaje.PresionArterial,
+          Saturacion = triaje.Saturacion,
+          FrecuenciaCardiaca = triaje.FrecuenciaCardiaca,
+          FrecuenciaRespiratoria = triaje.FrecuenciaRespiratoria,
+          Peso = triaje.Peso,
+          Talla = triaje.Talla,
+          PerimetroAbdominal = triaje.PerimetroAbdominal,
+          SuperficieCorporal = triaje.SuperficieCorporal,
+          Imc = triaje.Imc,
+          ClasificacionImc = triaje.ClasificacionImc,
+          RiesgoEnfermedad = triaje.RiesgoEnfermedad,
+          EstadoTriage = triaje.EstadoTriage,
+          FechaTriage = triaje.FechaTriage,
+          HoraTriage = triaje.HoraTriage,
+          Observaciones = triaje.Observaciones,
 
-            // Datos del paciente (de memoria, no de BD)
-            IdPaciente = triaje.IdPaciente,
-            NumeroDocumento = paciente?.NumeroDocumento ?? "",
-            TipoDocumento = paciente?.TipoDocumento ?? "",
-            Nombre = paciente?.Nombre ?? "",
-            ApellidoPaterno = paciente?.ApellidoPaterno ?? "",
-            ApellidoMaterno = paciente?.ApellidoMaterno ?? "",
-            Sexo = paciente?.Sexo ?? "",
-            Edad = paciente?.Edad ?? 0
+          // Datos del paciente (de memoria, no de BD)
+          IdPaciente = triaje.IdPaciente,
+          NumeroDocumento = paciente?.NumeroDocumento ?? "",
+          TipoDocumento = paciente?.TipoDocumento ?? "",
+          Nombre = paciente?.Nombre ?? "",
+          ApellidoPaterno = paciente?.ApellidoPaterno ?? "",
+          ApellidoMaterno = paciente?.ApellidoMaterno ?? "",
+          Sexo = paciente?.Sexo ?? "",
+          Edad = paciente?.Edad ?? 0
         };
 
         return new GenericResponse<TriajeResponseDTO>(true, triajeDTO, "Triaje actualizado correctamente.");
-    }
-    catch (Exception ex)
-    {
+      }
+      catch (Exception ex)
+      {
         Console.WriteLine($"Error en UpdateTriajeAsync: {ex.Message}");
         return new GenericResponse<TriajeResponseDTO>(false, $"Error: {ex.Message}");
+      }
     }
-}
 
 
     public async Task<GenericResponse<IEnumerable<TriajeResponseDTO>>> GetAllTriajesAsync()

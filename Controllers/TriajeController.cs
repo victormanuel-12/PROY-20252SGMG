@@ -61,63 +61,50 @@ namespace SGMG.Controllers
 [Route("/triaje/editar/{id}")]
 public async Task<IActionResult> Editar(int id)
 {
-            try
-            {
-
-
-                await CargarDatosEnfermera();
-
-                var response = await _triajeService.GetTriajeByIdAsync(id);
-
-                if (!(response.Success ?? false) || response.Data == null)
-                {
-                    // ✅ MENSAJE EXACTO QUE PIDE LA PRUEBA
-                    TempData["ErrorMessage"] = "No se pudieron cargar los datos del triaje. Por favor, intente nuevamente";
-                    return RedirectToAction("Listado");
-                }
-
-                var triajeData = response.Data;
-
-                // Mapear a RequestDTO para el formulario
-                var triajeRequest = new TriajeRequestDTO
-                {
-                    IdTriaje = triajeData.IdTriaje,
-                    IdPaciente = triajeData.IdPaciente,
-                    Temperatura = triajeData.Temperatura,
-                    PresionArterial = triajeData.PresionArterial,
-                    Saturacion = triajeData.Saturacion,
-                    FrecuenciaCardiaca = triajeData.FrecuenciaCardiaca,
-                    FrecuenciaRespiratoria = triajeData.FrecuenciaRespiratoria,
-                    Peso = triajeData.Peso,
-                    Talla = triajeData.Talla,
-                    PerimAbdominal = triajeData.PerimetroAbdominal,
-                    SuperficieCorporal = triajeData.SuperficieCorporal,
-                    Imc = triajeData.Imc,
-                    ClasificacionImc = triajeData.ClasificacionImc,
-                    RiesgoEnfermedad = triajeData.RiesgoEnfermedad,
-                    EstadoTriage = triajeData.EstadoTriage,
-                    Observaciones = triajeData.Observaciones
-                };
-
-                // Pasar datos del paciente a la vista
-                ViewBag.PacienteInfo = new
-                {
-                    NombreCompleto = triajeData.NombreCompletoPaciente ?? "",
-                    Documento = $"{triajeData.TipoDocumento ?? ""}: {triajeData.NumeroDocumento ?? ""}",
-                    Sexo = triajeData.Sexo ?? "",
-                    Edad = triajeData.Edad,
-                    IdPaciente = triajeData.IdPaciente
-                };
-
-                return View("EditarTriaje", triajeRequest);
-            }
-    catch (Exception ex)
+    await CargarDatosEnfermera();
+    
+    var response = await _triajeService.GetTriajeByIdAsync(id);
+    
+    if (!(response.Success ?? false) || response.Data == null)
     {
-        _logger.LogError(ex, "Error al cargar triaje para edición");
-        // ✅ MENSAJE EXACTO QUE PIDE LA PRUEBA
-        TempData["ErrorMessage"] = "No se pudieron cargar los datos del triaje. Por favor, intente nuevamente";
+        TempData["ErrorMessage"] = "Triaje no encontrado";
         return RedirectToAction("Listado");
     }
+
+    var triajeData = response.Data;
+
+    // Mapear a RequestDTO para el formulario
+    var triajeRequest = new TriajeRequestDTO
+    {
+        IdTriaje = triajeData.IdTriaje,
+        IdPaciente = triajeData.IdPaciente,
+        Temperatura = triajeData.Temperatura,
+        PresionArterial = triajeData.PresionArterial,
+        Saturacion = triajeData.Saturacion,
+        FrecuenciaCardiaca = triajeData.FrecuenciaCardiaca,
+        FrecuenciaRespiratoria = triajeData.FrecuenciaRespiratoria,
+        Peso = triajeData.Peso,
+        Talla = triajeData.Talla,
+        PerimAbdominal = triajeData.PerimetroAbdominal,
+        SuperficieCorporal = triajeData.SuperficieCorporal,
+        Imc = triajeData.Imc,
+        ClasificacionImc = triajeData.ClasificacionImc,
+        RiesgoEnfermedad = triajeData.RiesgoEnfermedad,
+        EstadoTriage = triajeData.EstadoTriage,
+        Observaciones = triajeData.Observaciones
+    };
+
+    // Pasar datos del paciente a la vista
+    ViewBag.PacienteInfo = new
+    {
+        NombreCompleto = triajeData.NombreCompletoPaciente ?? "",
+        Documento = $"{triajeData.TipoDocumento ?? ""}: {triajeData.NumeroDocumento ?? ""}",
+        Sexo = triajeData.Sexo ?? "",
+        Edad = triajeData.Edad,
+        IdPaciente = triajeData.IdPaciente
+    };
+
+    return View("EditarTriaje", triajeRequest);
 }
 
 [Authorize(Roles = "ENFERMERIA")]
@@ -128,17 +115,15 @@ public async Task<IActionResult> Editar(int id, TriajeRequestDTO triajeRequest)
 {
     await CargarDatosEnfermera();
 
+    if (id != triajeRequest.IdTriaje)
+    {
+        TempData["ErrorMessage"] = "ID del triaje no coincide";
+        return RedirectToAction("Listado");
+    }
+
     if (!ModelState.IsValid)
     {
-        // ✅ MEJORAR MENSAJES DE ERROR
-        var errors = ModelState.Values
-            .SelectMany(v => v.Errors)
-            .Select(e => e.ErrorMessage)
-            .ToList();
-        
-        TempData["ErrorMessage"] = "Por favor, corrija los errores en el formulario";
-        
-        // Recargar datos del paciente para mostrar el formulario nuevamente
+        // Recargar datos del paciente si hay error de validación
         var pacienteResponse = await _triajeService.GetTriajeByIdAsync(id);
         if ((pacienteResponse.Success ?? false) && pacienteResponse.Data != null)
         {
@@ -268,39 +253,7 @@ public async Task<IActionResult> Editar(int id, TriajeRequestDTO triajeRequest)
         [Route("/triaje/all")]
         public async Task<GenericResponse<IEnumerable<TriajeResponseDTO>>> GetAllTriajes()
         {
-            try
-            {
-                var response = await _triajeService.GetAllTriajesAsync();
-                
-                if (!(response.Success ?? false))
-                {
-                    // ✅ MENSAJE QUE PIDE LA PRUEBA
-                    return new GenericResponse<IEnumerable<TriajeResponseDTO>>(
-                        false, 
-                        "No se pudo cargar la lista de pacientes. Por favor, intente nuevamente"
-                    );
-                }
-
-                if (response.Data == null || !response.Data.Any())
-                {
-                    // ✅ MENSAJE QUE PIDE LA PRUEBA (incluso para lista vacía)
-                    return new GenericResponse<IEnumerable<TriajeResponseDTO>>(
-                        false, 
-                        "No se pudo cargar la lista de pacientes. Por favor, intente nuevamente"
-                    );
-                }
-                
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener todos los triajes");
-                // ✅ MENSAJE QUE PIDE LA PRUEBA
-                return new GenericResponse<IEnumerable<TriajeResponseDTO>>(
-                    false, 
-                    "No se pudo cargar la lista de pacientes. Por favor, intente nuevamente"
-                );
-            }
+            return await _triajeService.GetAllTriajesAsync();
         }
 
         [HttpGet]
