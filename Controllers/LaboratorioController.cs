@@ -47,7 +47,7 @@ namespace SGMG.Controllers
     {
       try
       {
-        //throw new Exception("Error simulado para pruebas");
+
         return View();
       }
       catch (Exception ex)
