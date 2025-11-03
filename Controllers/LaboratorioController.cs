@@ -205,7 +205,7 @@ namespace SGMG.Controllers
         return Ok(new
         {
           success = false,
-          message = "No se pudo cargar la información de la orden de exámen. Por favor, regrese e intente nuevamente."
+          message = "Ocurrió un error al guardar los resultados. Por favor, intente nuevamente."
         });
       }
     }
