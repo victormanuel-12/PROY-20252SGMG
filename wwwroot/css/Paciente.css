@@ -40,7 +40,6 @@
 }
 
 /* Estilos para el formulario de filtros */
-
 .btn i {
   margin-right: 6px;
 }
@@ -54,9 +53,11 @@
 /* Contenedor de botones de acción */
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
   align-items: center;
+  flex-wrap: nowrap;
+  min-width: 420px;
 }
 
 /* Estilos de botones de acción */
@@ -100,6 +101,7 @@
 .action-btn i {
   margin: 6px;
 }
+
 /* Estilos para detalles de derivación */
 .derivacion-detalle {
   display: none;
@@ -197,69 +199,20 @@
   background-color: #5a6268;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-/* Estilos de botones de acción */
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 14px;
-  padding: 8px 12px;
-}
-
-.action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.action-btn.view {
-  background-color: #17a2b8;
-  color: white;
-}
-
-.action-btn.view:hover {
-  background-color: #138496;
-}
-
-.action-btn.edit {
-  background-color: #007bff;
-  color: white;
-}
-
-.action-btn.edit:hover {
-  background-color: #0056b3;
-}
-
-.action-btn i {
-  margin: 6px;
-}
-
 /* Botones de acción para citas */
 .btn-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-action:hover {
@@ -268,9 +221,21 @@
 }
 
 .btn-action i {
-  margin-right: 6px;
+  margin-right: 4px;
+  font-size: 11px;
 }
 
+/* Botón Recordatorio - Verde menta */
+.btn-recordatorio {
+  background-color: #10b981;
+  color: white;
+}
+
+.btn-recordatorio:hover {
+  background-color: #059669;
+}
+
+/* Botón Reprogramar - Amarillo */
 .btn-reprogramar {
   background-color: #ffc107;
   color: #212529;
@@ -280,6 +245,7 @@
   background-color: #e0a800;
 }
 
+/* Botón Cancelar - Rojo */
 .btn-cancelar {
   background-color: #dc3545;
   color: white;
@@ -287,4 +253,27 @@
 
 .btn-cancelar:hover {
   background-color: #c82333;
+}
+
+/* Responsive: Botones más compactos en pantallas pequeñas */
+@media (max-width: 1400px) {
+  .action-buttons {
+    min-width: 130px;
+    gap: 4px;
+  }
+
+  .btn-action {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+  }
+
+  .btn-action span {
+    display: none;
+  }
+
+  .btn-action i {
+    margin: 0;
+    font-size: 14px;
+  }
 }

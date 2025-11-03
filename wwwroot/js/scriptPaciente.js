@@ -294,6 +294,12 @@ function renderCitasPendientesTable(citas) {
             <td>${c.nombreCompletoMedico || ""}</td>
             <td>
                 <div class="action-buttons">
+                <button class="btn-action btn-recordatorio" 
+                            onclick="enviarRecordatorio(${idCita})"
+                            title="Enviar Recordatorio">
+                        <i class="fas fa-bell"></i>
+                        Recordatorio
+                    </button>
                     <button class="btn-action btn-reprogramar" 
                             onclick="reprogramarCita(${idPaciente}, ${idCita})"
                             title="Reprogramar Cita">
