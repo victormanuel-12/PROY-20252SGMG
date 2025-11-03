@@ -99,13 +99,30 @@ namespace SGMG.Controllers
     [Route("api/crear")]
     public async Task<IActionResult> CrearOrden([FromBody] OrdenLaboratorioRequestDTO dto)
     {
-      var response = await _laboratorioService.CrearOrdenAsync(dto);
-      return Ok(new
+      try
       {
-        success = response.Success,
-        data = response.Data,
-        message = response.Message
-      });
+
+        var response = await _laboratorioService.CrearOrdenAsync(dto);
+
+        return Ok(new
+        {
+          success = response.Success,
+          data = response.Data,
+          message = response.Message ?? (response.Success == true
+            ? "Orden creada exitosamente"
+            : "Ocurrió un error al guardar la orden. Por favor, intente nuevamente.")
+        });
+      }
+      catch (Exception ex)
+      {
+
+
+        return Ok(new
+        {
+          success = false,
+          message = "Ocurrió un error al guardar la orden. Por favor, intente nuevamente."
+        });
+      }
     }
 
     // API: Actualizar orden
