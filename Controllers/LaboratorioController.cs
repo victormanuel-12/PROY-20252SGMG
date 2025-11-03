@@ -26,7 +26,18 @@ namespace SGMG.Controllers
     [Route("nueva-orden")]
     public IActionResult NuevaOrden()
     {
-      return View();
+      try
+      {
+
+        return View();
+      }
+      catch (Exception ex)
+      {
+        // Si hay error al intentar preparar la vista
+        ViewBag.ErrorMessage = "Error al cargar la el formulario. Por favor, regrese e intente nuevamente.";
+        return View("Error2");
+      }
+
     }
 
     // Vista de subir detalles
