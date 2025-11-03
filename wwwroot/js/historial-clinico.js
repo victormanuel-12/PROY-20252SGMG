@@ -1,11 +1,14 @@
 const API_BASE_URL = "http://localhost:5122";
 let idPacienteActual = null;
 let idMedicoActual = null;
+console.log("idPacienteActual inicial:", idPacienteActual);
 
 // Inicializar cuando cargue la página
 document.addEventListener("DOMContentLoaded", function () {
   obtenerParametrosURL();
   cargarDatosPaciente();
+  idPacienteActual = idPacienteActual; // Asegurar que la variable global esté actualizada
+  console.log("idPacienteActual después de cargar:", idPacienteActual);
 });
 
 // Obtener parámetros de la URL
@@ -191,10 +194,10 @@ document.getElementById("detailModal").addEventListener("click", function (e) {
 // ========== FUNCIONES DE NAVEGACIÓN ==========
 
 function irARecetas() {
-  if (idMedicoActual) {
-    window.location.href = `/recetas?idPaciente=${idPacienteActual}&idMedico=${idMedicoActual}`;
-  } else {
-    alert("Se requiere el ID del médico para acceder a recetas");
+  console.log("Navegando a recetas - idPaciente:", idPacienteActual);
+
+  if (idPacienteActual) {
+    window.location.href = `/Home/HistorialRecetas/${idPacienteActual}`;
   }
 }
 
