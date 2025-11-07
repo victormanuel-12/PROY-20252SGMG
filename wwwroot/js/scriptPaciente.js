@@ -622,3 +622,100 @@ function closeBlockedModal() {
   const modal = document.getElementById("cancelBlockedModal");
   if (modal) modal.style.display = "none";
 }
+async function enviarRecordatorio(idCita) {
+  console.log("=== Iniciando envío de recordatorio ===");
+  console.log("ID de Cita:", idCita);
+
+  if (!idCita) {
+    showAlert("Error: No se pudo identificar la cita.", "error");
+    return;
+  }
+
+  // Obtener el botón que se presionó
+  const btn = event.target.closest("button");
+  if (!btn) {
+    console.error("No se pudo encontrar el botón");
+    return;
+  }
+
+  // Guardar el contenido original del botón
+  const originalHtml = btn.innerHTML;
+
+  // Deshabilitar el botón y mostrar indicador de carga
+  btn.disabled = true;
+  btn.style.opacity = "0.6";
+  btn.style.cursor = "not-allowed";
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+  try {
+    console.log(
+      "Realizando petición POST a:",
+      `${API_BASE_URL}/pacientes/enviar-recordatorio/${idCita}`
+    );
+
+    const response = await fetch(
+      `${API_BASE_URL}/pacientes/enviar-recordatorio/${idCita}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("Status de respuesta:", response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("Resultado recibido:", result);
+
+    if (result.success) {
+      // Éxito
+      showAlert(
+        result.message || "✅ Recordatorio enviado exitosamente por WhatsApp.",
+        "success"
+      );
+
+      // Cambiar temporalmente el botón a un estado de éxito
+      btn.innerHTML = '<i class="fas fa-check-circle"></i> Enviado';
+      btn.style.backgroundColor = "#28a745";
+
+      // Después de 2 segundos, restaurar el botón
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.style.cursor = "pointer";
+        btn.style.backgroundColor = "";
+        btn.innerHTML = originalHtml;
+      }, 2000);
+    } else {
+      // Error del servidor
+      showAlert(
+        result.message || "❌ No se pudo enviar el recordatorio.",
+        "error"
+      );
+
+      // Restaurar el botón inmediatamente
+      btn.disabled = false;
+      btn.style.opacity = "1";
+      btn.style.cursor = "pointer";
+      btn.innerHTML = originalHtml;
+    }
+  } catch (error) {
+    // Error de red o excepción
+    console.error("Error al enviar recordatorio:", error);
+    showAlert(
+      "❌ Error de conexión al enviar el recordatorio por WhatsApp.",
+      "error"
+    );
+
+    // Restaurar el botón
+    btn.disabled = false;
+    btn.style.opacity = "1";
+    btn.style.cursor = "pointer";
+    btn.innerHTML = originalHtml;
+  }
+}

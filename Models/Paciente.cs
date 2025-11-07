@@ -19,7 +19,7 @@ namespace SGMG.Models
     public string Sexo { get; set; } = "";
     public int Edad { get; set; }
     public DateTime FechaRegistro { get; set; }
-
+    public string Telefono { get; set; } = "";
     // Relaciones
     public ICollection<HistoriaClinica> HistoriasClinicas { get; set; } = new List<HistoriaClinica>();
     public ICollection<Triaje> Triages { get; set; } = new List<Triaje>();
