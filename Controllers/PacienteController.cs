@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SGMG.Models;
 using SGMG.Services;
 using SGMG.Dtos.Response;
 using SGMG.Dtos.Request.Paciente;
 using PROY_20252SGMG.Dtos.Response;
 using SGMG.Data;
-using Microsoft.EntityFrameworkCore;
-using Twilio.Rest.Api.V2010.Account;
+using PROY_20252SGMG.ViewsModels;
 using Twilio;
+using Twilio.Rest.Api.V2010.Account;
 using Twilio.Types;
-
 
 namespace SGMG.Controllers
 {
@@ -40,7 +40,6 @@ namespace SGMG.Controllers
       return await _pacienteService.GetAllPacientesAsync();
     }
 
-    // NUEVO: Endpoint de búsqueda
     [HttpGet]
     [Route("/pacientes/search")]
     public async Task<GenericResponse<Paciente>> SearchPaciente([FromQuery] string tipoDocumento, [FromQuery] string numeroDocumento)
@@ -48,7 +47,6 @@ namespace SGMG.Controllers
       return await _pacienteService.SearchPacienteByDocumentoAsync(tipoDocumento, numeroDocumento);
     }
 
-    // NUEVO: Obtener citas pendientes de un paciente
     [HttpGet]
     [Route("/pacientes/{id}/citas-pendientes")]
     public async Task<GenericResponse<IEnumerable<CitaResponseDTO>>> GetCitasPendientesByPaciente(int id)
@@ -91,238 +89,227 @@ namespace SGMG.Controllers
       return await _pacienteService.GetDerivacionesByPacienteAsync(id);
     }
 
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-      return View("Error!");
-    }
-    [HttpPost]
-    [Route("/pacientes/enviar-recordatorio/{idCita}")]
-    public async Task<IActionResult> EnviarRecordatorioCita(int idCita)
+    /// <summary>
+    /// PRUEBA DE ACEPTACIÓN 2: Visualizar resumen de recordatorio
+    /// Genera la vista previa del recordatorio antes de enviarlo
+    /// </summary>
+    [HttpGet]
+    [Route("/pacientes/confirmar-recordatorio/{idCita}")]
+    public async Task<IActionResult> ConfirmarRecordatorio(int idCita)
     {
       try
       {
-        _logger.LogInformation($"=== INICIO ENVÍO DE RECORDATORIO - Cita ID: {idCita} ===");
+        _logger.LogInformation($"=== GENERANDO VISTA PREVIA DE RECORDATORIO - Cita ID: {idCita} ===");
 
-        // ============================================
-        // PASO 1: CONSULTAR LA CITA EN LA BASE DE DATOS
-        // ============================================
-        _logger.LogInformation("Consultando información de la cita en la base de datos...");
-
+        // Consultar la cita con sus relaciones
         var cita = await _context.Citas
-            .Include(c => c.Paciente)      // Incluir datos del paciente
-            .Include(c => c.Medico)        // Incluir datos del médico
+            .Include(c => c.Paciente)
+            .Include(c => c.Medico)
             .Where(c => c.IdCita == idCita)
             .FirstOrDefaultAsync();
 
-        // Validar que la cita existe
+        // PRUEBA 2.2: Error al generar la vista previa
         if (cita == null)
         {
-          _logger.LogWarning($"No se encontró la cita con ID: {idCita}");
-          return Ok(new GenericResponse<string>
-          {
-            Success = false,
-            Message = $"No se encontró la cita con ID: {idCita}"
-          });
+          TempData["ErrorMessage"] = "Ocurrió un error al generar la vista previa del recordatorio. Por favor, intente nuevamente.";
+          return RedirectToAction("VisualPaciente", "Home");
         }
 
-        _logger.LogInformation($"Cita encontrada: ID {cita.IdCita}, Paciente: {cita.Paciente?.Nombre}");
-
-        // ============================================
-        // PASO 2: VALIDAR DATOS DEL PACIENTE
-        // ============================================
-        if (cita.Paciente == null)
+        // PRUEBA 2.1: Paciente sin número de teléfono
+        if (string.IsNullOrWhiteSpace(cita.Paciente?.Telefono))
         {
-          _logger.LogError($"La cita {idCita} no tiene un paciente asociado");
-          return Ok(new GenericResponse<string>
-          {
-            Success = false,
-            Message = "La cita no tiene un paciente asociado."
-          });
+          TempData["ErrorMessage"] = "No se puede enviar el recordatorio porque el paciente no tiene un número de teléfono registrado.";
+          return RedirectToAction("VisualPaciente", "Home");
         }
 
-        // Validar que el paciente tenga teléfono
-        if (string.IsNullOrWhiteSpace(cita.Paciente.Telefono))
-        {
-          _logger.LogWarning($"El paciente {cita.Paciente.IdPaciente} no tiene teléfono registrado");
-          return Ok(new GenericResponse<string>
-          {
-            Success = false,
-            Message = "El paciente no tiene un número de teléfono registrado en el sistema."
-          });
-        }
+        // Construir el nombre completo del paciente
+        string nombrePaciente = $"{cita.Paciente.ApellidoPaterno} {cita.Paciente.ApellidoMaterno}, {cita.Paciente.Nombre}".Trim();
 
-        _logger.LogInformation($"Teléfono del paciente: {cita.Paciente.Telefono}");
+        // Construir el nombre completo del médico
+        string nombreMedico = $"Dr. {cita.Medico.Nombre} {cita.Medico.ApellidoPaterno}".Trim();
 
-        // ============================================
-        // PASO 3: VALIDAR DATOS DEL MÉDICO
-        // ============================================
-        if (cita.Medico == null)
-        {
-          _logger.LogError($"La cita {idCita} no tiene un médico asociado");
-          return Ok(new GenericResponse<string>
-          {
-            Success = false,
-            Message = "La cita no tiene un médico asociado."
-          });
-        }
-
-        // ============================================
-        // PASO 4: EXTRAER Y FORMATEAR DATOS DE LA BD
-        // ============================================
-        _logger.LogInformation("Extrayendo y formateando datos de la cita...");
-
-        // Nombre completo del paciente
-        string nombrePaciente = $"{cita.Paciente.Nombre} {cita.Paciente.ApellidoPaterno} {cita.Paciente.ApellidoMaterno}".Trim();
-
-        // Nombre completo del médico
-        string nombreMedico = $"Dr(a). {cita.Medico.Nombre} {cita.Medico.ApellidoPaterno} {cita.Medico.ApellidoMaterno}".Trim();
-
-        // Fecha formateada (dd/MM/yyyy)
+        // Formatear fecha y hora
         string fechaCita = cita.FechaCita.ToString("dd/MM/yyyy");
-
-        // Hora formateada (HH:mm)
         string horaCita = cita.HoraCita.ToString(@"hh\:mm");
 
-        // Consultorio
-        string consultorio = string.IsNullOrWhiteSpace(cita.Consultorio) ? "Por asignar" : cita.Consultorio;
+        // Construir el mensaje según el formato solicitado
+        string mensaje = $@"Estimado(a) {nombrePaciente}
 
-        // Especialidad (siempre Medicina General)
-        string especialidad = "Medicina General";
+Le recordamos su cita médica programada:
 
-        _logger.LogInformation($"Datos extraídos - Fecha: {fechaCita}, Hora: {horaCita}, Consultorio: {consultorio}");
+🗓️ Fecha: {fechaCita}
+⏰ Hora: {horaCita}
+👨‍⚕️ Médico: {nombreMedico}
+🏥 Consultorio: {cita.Consultorio}
+🩺 Servicio: MEDICINA GENERAL
 
-        // ============================================
-        // PASO 5: FORMATEAR NÚMERO DE TELÉFONO
-        // ============================================
-        string telefonoOriginal = cita.Paciente.Telefono;
-        string telefonoFormateado = FormatearNumeroParaWhatsApp(telefonoOriginal);
+Por favor, llegue 15 minutos antes de su cita.
 
-        _logger.LogInformation($"Teléfono formateado: {telefonoOriginal} -> {telefonoFormateado}");
+Hospital Nacional Hipólito Unanue
+Consultas: (01) 362-0220";
 
-        // ============================================
-        // PASO 6: CONSTRUIR EL MENSAJE DE WHATSAPP
-        // ============================================
-        string mensaje = $@"🏥 *RECORDATORIO DE CITA MÉDICA*
+        // Crear el ViewModel para la vista
+        var viewModel = new ConfirmarRecordatorioViewModel
+        {
+          IdCita = cita.IdCita,
+          NombreCompletoPaciente = nombrePaciente,
+          Dni = cita.Paciente.NumeroDocumento,
+          Telefono = cita.Paciente.Telefono,
+          Edad = cita.Paciente.Edad,
+          Fecha = fechaCita,
+          Hora = horaCita,
+          Medico = nombreMedico,
+          Consultorio = cita.Consultorio,
+          Especialidad = "MEDICINA GENERAL",
+          Estado = cita.EstadoCita,
+          MensajeWhatsApp = mensaje,
+          NombreHospital = "Hospital Nacional Hipólito Unanue",
+          TelefonoHospital = "(01) 362-0220"
+        };
 
-Estimado(a) *{nombrePaciente}*,
+        _logger.LogInformation($"Vista previa generada exitosamente para cita {idCita}");
 
-Le recordamos que tiene una cita programada:
+        // PRUEBA 2: Se muestra el resumen del recordatorio
+        return View("ConfirmarRecordatorio", viewModel);
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, $"Error al generar vista previa del recordatorio para cita {idCita}");
+        // PRUEBA 2.2: Error al generar la vista previa
+        TempData["ErrorMessage"] = "Ocurrió un error al generar la vista previa del recordatorio. Por favor, intente nuevamente.";
+        return RedirectToAction("VisualPaciente", "Home");
+      }
+    }
 
-📅 *Fecha:* {fechaCita}
-🕐 *Hora:* {horaCita}
-👨‍⚕️ *Médico:* {nombreMedico}
-🏢 *Consultorio:* {consultorio}
-🩺 *Especialidad:* {especialidad}
+    /// <summary>
+    /// PRUEBA DE ACEPTACIÓN 3: Enviar recordatorio por WhatsApp
+    /// Envía el mensaje de WhatsApp usando Twilio
+    /// </summary>
+    [HttpPost]
+    [Route("/pacientes/enviar-recordatorio-whatsapp/{idCita}")]
+    public async Task<IActionResult> EnviarRecordatorioWhatsApp(int idCita)
+    {
+      try
+      {
+        _logger.LogInformation($"=== INICIANDO ENVÍO DE WHATSAPP - Cita ID: {idCita} ===");
 
-✅ Por favor, llegue 10 minutos antes de su cita.
+        // Consultar la cita
+        var cita = await _context.Citas
+            .Include(c => c.Paciente)
+            .Include(c => c.Medico)
+            .Where(c => c.IdCita == idCita)
+            .FirstOrDefaultAsync();
 
-⚠️ Si no puede asistir, comuníquese con nosotros para reprogramar.
+        if (cita == null)
+        {
+          return Ok(new GenericResponse<string>
+          {
+            Success = false,
+            Message = "No se encontró la cita especificada."
+          });
+        }
 
-¡Le esperamos! 💙";
+        if (string.IsNullOrWhiteSpace(cita.Paciente?.Telefono))
+        {
+          return Ok(new GenericResponse<string>
+          {
+            Success = false,
+            Message = "No se puede enviar el recordatorio porque el paciente no tiene un número de teléfono registrado."
+          });
+        }
 
-        _logger.LogInformation("Mensaje construido exitosamente");
-        _logger.LogInformation($"Contenido del mensaje:\n{mensaje}");
+        // Construir datos
+        string nombrePaciente = $"{cita.Paciente.ApellidoPaterno} {cita.Paciente.ApellidoMaterno}, {cita.Paciente.Nombre}".Trim();
+        string nombreMedico = $"Dr. {cita.Medico.Nombre} {cita.Medico.ApellidoPaterno}".Trim();
+        string fechaCita = cita.FechaCita.ToString("dd/MM/yyyy");
+        string horaCita = cita.HoraCita.ToString(@"hh\:mm");
 
-        // ============================================
-        // PASO 7: OBTENER CREDENCIALES DE TWILIO
-        // ============================================
+        // Construir mensaje según formato solicitado
+        string mensaje = $@"Estimado(a) {nombrePaciente}
+
+Le recordamos su cita médica programada:
+
+🗓️ Fecha: {fechaCita}
+⏰ Hora: {horaCita}
+👨‍⚕️ Médico: {nombreMedico}
+🏥 Consultorio: {cita.Consultorio}
+🩺 Servicio: MEDICINA GENERAL
+
+Por favor, llegue 15 minutos antes de su cita.
+
+Hospital Nacional Hipólito Unanue
+Consultas: (01) 362-0220";
+
+        // Formatear teléfono
+        string telefonoFormateado = FormatearNumeroParaWhatsApp(cita.Paciente.Telefono);
+
+        // Obtener credenciales de Twilio
         var accountSid = _configuration["Twilio:AccountSid"];
         var authToken = _configuration["Twilio:AuthToken"];
         var whatsappFrom = _configuration["Twilio:WhatsAppFrom"];
 
         if (string.IsNullOrWhiteSpace(accountSid) || string.IsNullOrWhiteSpace(authToken))
         {
-          _logger.LogError("Credenciales de Twilio no configuradas en appsettings.json");
+          // PRUEBA 3.1: Error de conexión con WhatsApp
           return Ok(new GenericResponse<string>
           {
             Success = false,
-            Message = "Error de configuración: Credenciales de Twilio no encontradas."
+            Message = "No se pudo conectar con WhatsApp. Por favor, verifique su conexión a internet e inténtelo de nuevo."
           });
         }
 
-        _logger.LogInformation($"Credenciales de Twilio obtenidas. Account SID: {accountSid?.Substring(0, 10)}...");
-
-        // ============================================
-        // PASO 8: INICIALIZAR TWILIO CLIENT
-        // ============================================
-        _logger.LogInformation("Inicializando cliente de Twilio...");
+        // Inicializar Twilio
         TwilioClient.Init(accountSid, authToken);
 
-        // ============================================
-        // PASO 9: ENVIAR MENSAJE POR WHATSAPP
-        // ============================================
-        _logger.LogInformation($"Enviando mensaje de WhatsApp desde {whatsappFrom} hacia {telefonoFormateado}");
-
+        // Enviar mensaje
         var messageResource = await MessageResource.CreateAsync(
             body: mensaje,
             from: new PhoneNumber(whatsappFrom),
             to: new PhoneNumber($"whatsapp:{telefonoFormateado}")
         );
 
-        // ============================================
-        // PASO 10: VALIDAR RESPUESTA DE TWILIO
-        // ============================================
-        _logger.LogInformation($"Respuesta de Twilio - SID: {messageResource.Sid}, Status: {messageResource.Status}");
+        _logger.LogInformation($"Mensaje enviado - SID: {messageResource.Sid}");
 
         if (messageResource.ErrorCode.HasValue)
         {
-          _logger.LogError($"Error de Twilio - Código: {messageResource.ErrorCode}, Mensaje: {messageResource.ErrorMessage}");
+          // PRUEBA 3.1: Error de conexión con WhatsApp
           return Ok(new GenericResponse<string>
           {
             Success = false,
-            Message = $"Error al enviar mensaje: {messageResource.ErrorMessage}"
+            Message = "No se pudo conectar con WhatsApp. Por favor, verifique su conexión a internet e inténtelo de nuevo."
           });
         }
 
-        // ============================================
-        // PASO 11: RETORNAR RESPUESTA EXITOSA
-        // ============================================
-        _logger.LogInformation($"=== RECORDATORIO ENVIADO EXITOSAMENTE - SID: {messageResource.Sid} ===");
-
+        // PRUEBA 3: Envío exitoso
         return Ok(new GenericResponse<string>
         {
           Success = true,
-          Message = $"Recordatorio enviado exitosamente a {nombrePaciente} al número {telefonoOriginal}",
+          Message = $"Recordatorio enviado exitosamente a {nombrePaciente} por WhatsApp.",
           Data = messageResource.Sid
         });
       }
       catch (Twilio.Exceptions.ApiException twilioEx)
       {
-        // Error específico de Twilio
-        _logger.LogError(twilioEx, $"Error de API de Twilio al enviar recordatorio de cita {idCita}");
+        _logger.LogError(twilioEx, "Error de Twilio API");
+        // PRUEBA 3.1: Error de conexión con WhatsApp
         return Ok(new GenericResponse<string>
         {
           Success = false,
-          Message = $"Error de Twilio: {twilioEx.Message}. Código: {twilioEx.Code}"
-        });
-      }
-      catch (DbUpdateException dbEx)
-      {
-        // Error de base de datos
-        _logger.LogError(dbEx, $"Error de base de datos al consultar cita {idCita}");
-        return Ok(new GenericResponse<string>
-        {
-          Success = false,
-          Message = "Error al consultar la base de datos."
+          Message = "No se pudo conectar con WhatsApp. Por favor, verifique su conexión a internet e inténtelo de nuevo."
         });
       }
       catch (Exception ex)
       {
-        // Error general
-        _logger.LogError(ex, $"Error inesperado al enviar recordatorio de cita {idCita}");
+        _logger.LogError(ex, "Error general al enviar WhatsApp");
+        // PRUEBA 3.1: Error de conexión con WhatsApp
         return Ok(new GenericResponse<string>
         {
           Success = false,
-          Message = $"Error inesperado: {ex.Message}"
+          Message = "No se pudo conectar con WhatsApp. Por favor, verifique su conexión a internet e inténtelo de nuevo."
         });
       }
     }
 
-    /// <summary>
-    /// Formatea un número de teléfono para WhatsApp
-    /// Agrega el código de país +51 (Perú) si no lo tiene
-    /// </summary>
     private string FormatearNumeroParaWhatsApp(string telefono)
     {
       if (string.IsNullOrWhiteSpace(telefono))
@@ -330,29 +317,30 @@ Le recordamos que tiene una cita programada:
         throw new ArgumentException("El número de teléfono no puede estar vacío");
       }
 
-      // Eliminar espacios, guiones, paréntesis y otros caracteres
       string numeroLimpio = new string(telefono.Where(char.IsDigit).ToArray());
 
-      // Si el número tiene 9 dígitos, es un número peruano sin código de país
       if (numeroLimpio.Length == 9)
       {
         return $"+51{numeroLimpio}";
       }
 
-      // Si empieza con 51 pero no tiene el +
       if (numeroLimpio.StartsWith("51") && numeroLimpio.Length == 11)
       {
         return $"+{numeroLimpio}";
       }
 
-      // Si ya tiene el código completo
       if (numeroLimpio.StartsWith("51") || telefono.StartsWith("+51"))
       {
         return telefono.StartsWith("+") ? telefono : $"+{numeroLimpio}";
       }
 
-      // Por defecto, agregar +51 (Perú)
       return $"+51{numeroLimpio}";
+    }
+
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+      return View("Error!");
     }
   }
 }

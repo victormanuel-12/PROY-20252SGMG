@@ -621,9 +621,9 @@ function openBlockedModal(message) {
 function closeBlockedModal() {
   const modal = document.getElementById("cancelBlockedModal");
   if (modal) modal.style.display = "none";
-}
+} // Función para enviar recordatorio - Redirige a la vista de confirmación
 async function enviarRecordatorio(idCita) {
-  console.log("=== Iniciando envío de recordatorio ===");
+  console.log("=== Redirigiendo a vista de confirmación ===");
   console.log("ID de Cita:", idCita);
 
   if (!idCita) {
@@ -645,72 +645,15 @@ async function enviarRecordatorio(idCita) {
   btn.disabled = true;
   btn.style.opacity = "0.6";
   btn.style.cursor = "not-allowed";
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
 
   try {
-    console.log(
-      "Realizando petición POST a:",
-      `${API_BASE_URL}/pacientes/enviar-recordatorio/${idCita}`
-    );
-
-    const response = await fetch(
-      `${API_BASE_URL}/pacientes/enviar-recordatorio/${idCita}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    console.log("Status de respuesta:", response.status);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log("Resultado recibido:", result);
-
-    if (result.success) {
-      // Éxito
-      showAlert(
-        result.message || "✅ Recordatorio enviado exitosamente por WhatsApp.",
-        "success"
-      );
-
-      // Cambiar temporalmente el botón a un estado de éxito
-      btn.innerHTML = '<i class="fas fa-check-circle"></i> Enviado';
-      btn.style.backgroundColor = "#28a745";
-
-      // Después de 2 segundos, restaurar el botón
-      setTimeout(() => {
-        btn.disabled = false;
-        btn.style.opacity = "1";
-        btn.style.cursor = "pointer";
-        btn.style.backgroundColor = "";
-        btn.innerHTML = originalHtml;
-      }, 2000);
-    } else {
-      // Error del servidor
-      showAlert(
-        result.message || "❌ No se pudo enviar el recordatorio.",
-        "error"
-      );
-
-      // Restaurar el botón inmediatamente
-      btn.disabled = false;
-      btn.style.opacity = "1";
-      btn.style.cursor = "pointer";
-      btn.innerHTML = originalHtml;
-    }
+    // Redirigir a la página de confirmación
+    // PRUEBA 2: Visualizar resumen de recordatorio
+    window.location.href = `/pacientes/confirmar-recordatorio/${idCita}`;
   } catch (error) {
-    // Error de red o excepción
-    console.error("Error al enviar recordatorio:", error);
-    showAlert(
-      "❌ Error de conexión al enviar el recordatorio por WhatsApp.",
-      "error"
-    );
+    console.error("Error al cargar vista de confirmación:", error);
+    showAlert("Error al cargar la vista de confirmación.", "error");
 
     // Restaurar el botón
     btn.disabled = false;
