@@ -71,50 +71,62 @@ namespace SGMG.Controllers
     [Route("/triaje/editar/{id}")]
     public async Task<IActionResult> Editar(int id)
     {
-      await CargarDatosEnfermera();
 
-      var response = await _triajeService.GetTriajeByIdAsync(id);
-
-      if (!(response.Success ?? false) || response.Data == null)
+      try
       {
-        TempData["ErrorMessage"] = "Triaje no encontrado";
+        //throw new Exception("Error de prueba en Editar Triaje");
+        await CargarDatosEnfermera();
+
+        var response = await _triajeService.GetTriajeByIdAsync(id);
+
+        if (!(response.Success ?? false) || response.Data == null)
+        {
+          TempData["ErrorMessage"] = "Triaje no encontrado";
+          return RedirectToAction("Listado");
+        }
+
+        var triajeData = response.Data;
+
+        // Mapear a RequestDTO para el formulario
+        var triajeRequest = new TriajeRequestDTO
+        {
+          IdTriaje = triajeData.IdTriaje,
+          IdPaciente = triajeData.IdPaciente,
+          Temperatura = triajeData.Temperatura,
+          PresionArterial = triajeData.PresionArterial,
+          Saturacion = triajeData.Saturacion,
+          FrecuenciaCardiaca = triajeData.FrecuenciaCardiaca,
+          FrecuenciaRespiratoria = triajeData.FrecuenciaRespiratoria,
+          Peso = triajeData.Peso,
+          Talla = triajeData.Talla,
+          PerimAbdominal = triajeData.PerimetroAbdominal,
+          SuperficieCorporal = triajeData.SuperficieCorporal,
+          Imc = triajeData.Imc,
+          ClasificacionImc = triajeData.ClasificacionImc,
+          RiesgoEnfermedad = triajeData.RiesgoEnfermedad,
+          EstadoTriage = triajeData.EstadoTriage,
+          Observaciones = triajeData.Observaciones
+        };
+
+        // Pasar datos del paciente a la vista
+        ViewBag.PacienteInfo = new
+        {
+          NombreCompleto = triajeData.NombreCompletoPaciente ?? "",
+          Documento = $"{triajeData.TipoDocumento ?? ""}: {triajeData.NumeroDocumento ?? ""}",
+          Sexo = triajeData.Sexo ?? "",
+          Edad = triajeData.Edad,
+          IdPaciente = triajeData.IdPaciente
+        };
+
+        return View("EditarTriaje", triajeRequest);
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, $"Error al cargar triaje {id} para edición");
+        TempData["ErrorMessage"] = "No se pudieron cargar los datos del triaje. Por favor, intente nuevamente";
         return RedirectToAction("Listado");
       }
 
-      var triajeData = response.Data;
-
-      // Mapear a RequestDTO para el formulario
-      var triajeRequest = new TriajeRequestDTO
-      {
-        IdTriaje = triajeData.IdTriaje,
-        IdPaciente = triajeData.IdPaciente,
-        Temperatura = triajeData.Temperatura,
-        PresionArterial = triajeData.PresionArterial,
-        Saturacion = triajeData.Saturacion,
-        FrecuenciaCardiaca = triajeData.FrecuenciaCardiaca,
-        FrecuenciaRespiratoria = triajeData.FrecuenciaRespiratoria,
-        Peso = triajeData.Peso,
-        Talla = triajeData.Talla,
-        PerimAbdominal = triajeData.PerimetroAbdominal,
-        SuperficieCorporal = triajeData.SuperficieCorporal,
-        Imc = triajeData.Imc,
-        ClasificacionImc = triajeData.ClasificacionImc,
-        RiesgoEnfermedad = triajeData.RiesgoEnfermedad,
-        EstadoTriage = triajeData.EstadoTriage,
-        Observaciones = triajeData.Observaciones
-      };
-
-      // Pasar datos del paciente a la vista
-      ViewBag.PacienteInfo = new
-      {
-        NombreCompleto = triajeData.NombreCompletoPaciente ?? "",
-        Documento = $"{triajeData.TipoDocumento ?? ""}: {triajeData.NumeroDocumento ?? ""}",
-        Sexo = triajeData.Sexo ?? "",
-        Edad = triajeData.Edad,
-        IdPaciente = triajeData.IdPaciente
-      };
-
-      return View("EditarTriaje", triajeRequest);
     }
 
     [Authorize(Roles = "ENFERMERIA")]
