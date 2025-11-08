@@ -129,65 +129,78 @@ namespace SGMG.Controllers
 
     }
 
+
     [Authorize(Roles = "ENFERMERIA")]
     [HttpPost]
     [Route("/triaje/editar/{id}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Editar(int id, TriajeRequestDTO triajeRequest)
     {
-      await CargarDatosEnfermera();
-
-      if (id != triajeRequest.IdTriaje)
+      try
       {
-        TempData["ErrorMessage"] = "ID del triaje no coincide";
-        return RedirectToAction("Listado");
-      }
+        // ⚠️ DESCOMENTAR PARA PROBAR EXCEPCIÓN
+        throw new Exception("");
 
-      if (!ModelState.IsValid)
-      {
-        // Recargar datos del paciente si hay error de validación
-        var pacienteResponse = await _triajeService.GetTriajeByIdAsync(id);
-        if ((pacienteResponse.Success ?? false) && pacienteResponse.Data != null)
+        await CargarDatosEnfermera();
+
+        if (id != triajeRequest.IdTriaje)
+        {
+          TempData["ErrorMessage"] = "ID del triaje no coincide";
+          return RedirectToAction("Listado");
+        }
+
+        if (!ModelState.IsValid)
+        {
+          // Recargar datos del paciente si hay error de validación
+          var pacienteResponse = await _triajeService.GetTriajeByIdAsync(id);
+          if ((pacienteResponse.Success ?? false) && pacienteResponse.Data != null)
+          {
+            ViewBag.PacienteInfo = new
+            {
+              NombreCompleto = pacienteResponse.Data.NombreCompletoPaciente ?? "",
+              Documento = $"{pacienteResponse.Data.TipoDocumento ?? ""}: {pacienteResponse.Data.NumeroDocumento ?? ""}",
+              Sexo = pacienteResponse.Data.Sexo ?? "",
+              Edad = pacienteResponse.Data.Edad,
+              IdPaciente = pacienteResponse.Data.IdPaciente
+            };
+          }
+          return View("EditarTriaje", triajeRequest);
+        }
+
+        var response = await _triajeService.UpdateTriajeAsync(triajeRequest);
+
+        if (response.Success ?? false)
+        {
+          TempData["SuccessMessage"] = "Triaje actualizado correctamente";
+          return RedirectToAction("Listado");
+        }
+
+        ModelState.AddModelError("", response.Message ?? "Error al actualizar el triaje");
+
+        // Recargar datos del paciente en caso de error
+        var pacienteData = await _triajeService.GetTriajeByIdAsync(id);
+        if ((pacienteData.Success ?? false) && pacienteData.Data != null)
         {
           ViewBag.PacienteInfo = new
           {
-            NombreCompleto = pacienteResponse.Data.NombreCompletoPaciente ?? "",
-            Documento = $"{pacienteResponse.Data.TipoDocumento ?? ""}: {pacienteResponse.Data.NumeroDocumento ?? ""}",
-            Sexo = pacienteResponse.Data.Sexo ?? "",
-            Edad = pacienteResponse.Data.Edad,
-            IdPaciente = pacienteResponse.Data.IdPaciente
+            NombreCompleto = pacienteData.Data.NombreCompletoPaciente ?? "",
+            Documento = $"{pacienteData.Data.TipoDocumento ?? ""}: {pacienteData.Data.NumeroDocumento ?? ""}",
+            Sexo = pacienteData.Data.Sexo ?? "",
+            Edad = pacienteData.Data.Edad,
+            IdPaciente = pacienteData.Data.IdPaciente
           };
         }
+
         return View("EditarTriaje", triajeRequest);
       }
-
-      var response = await _triajeService.UpdateTriajeAsync(triajeRequest);
-
-      if (response.Success ?? false)
+      catch (Exception ex)
       {
-        TempData["SuccessMessage"] = "Triaje actualizado correctamente";
-        // ✅ CORREGIDO: Redirigir al listado en lugar de detalles
+        _logger.LogError(ex, $"Error al guardar cambios del triaje {id}");
+        TempData["ErrorMessage"] = "Ocurrió un error al guardar los cambios. Por favor, intente nuevamente";
         return RedirectToAction("Listado");
       }
-
-      ModelState.AddModelError("", response.Message ?? "Error al actualizar el triaje");
-
-      // Recargar datos del paciente en caso de error
-      var pacienteData = await _triajeService.GetTriajeByIdAsync(id);
-      if ((pacienteData.Success ?? false) && pacienteData.Data != null)
-      {
-        ViewBag.PacienteInfo = new
-        {
-          NombreCompleto = pacienteData.Data.NombreCompletoPaciente ?? "",
-          Documento = $"{pacienteData.Data.TipoDocumento ?? ""}: {pacienteData.Data.NumeroDocumento ?? ""}",
-          Sexo = pacienteData.Data.Sexo ?? "",
-          Edad = pacienteData.Data.Edad,
-          IdPaciente = pacienteData.Data.IdPaciente
-        };
-      }
-
-      return View("EditarTriaje", triajeRequest);
     }
+
     [Authorize(Roles = "ENFERMERIA")]
     [HttpGet]
     [Route("/triaje/detalles/{id}")]
