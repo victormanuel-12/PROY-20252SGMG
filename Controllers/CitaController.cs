@@ -110,6 +110,8 @@ namespace SGMG.Controllers
     {
       try
       {
+        //throw new Exception("Error de prueba para logging");
+
         if (request.IdCita <= 0)
           return Json(new { success = false, mensaje = "ID de cita inválido" });
 
@@ -228,7 +230,13 @@ namespace SGMG.Controllers
       catch (Exception ex)
       {
         _logger.LogError(ex, "Error al reprogramar cita");
-        return Json(new { success = false, mensaje = "Error al reprogramar la cita: " + ex.Message });
+
+        // Retornar JSON con el mensaje de error
+        return Json(new
+        {
+          success = false,
+          mensaje = "No se pudo reprogramar la cita en estos momentos. Por favor, intente nuevamente."
+        });
       }
     }
 
