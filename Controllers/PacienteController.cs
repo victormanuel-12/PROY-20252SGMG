@@ -99,6 +99,7 @@ namespace SGMG.Controllers
     {
       try
       {
+        throw new Exception("Error simulado para pruebas");
         _logger.LogInformation($"=== GENERANDO VISTA PREVIA DE RECORDATORIO - Cita ID: {idCita} ===");
 
         // Consultar la cita con sus relaciones
@@ -177,7 +178,7 @@ Consultas: (01) 362-0220";
         _logger.LogError(ex, $"Error al generar vista previa del recordatorio para cita {idCita}");
         // PRUEBA 2.2: Error al generar la vista previa
         TempData["ErrorMessage"] = "Ocurrió un error al generar la vista previa del recordatorio. Por favor, intente nuevamente.";
-        return RedirectToAction("VisualPaciente", "Home");
+        return RedirectToAction("Paciente", "Home");
       }
     }
 
