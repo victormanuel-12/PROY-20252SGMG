@@ -264,6 +264,7 @@ namespace SGMG.Controllers
     [Route("/triaje/all")]
     public async Task<GenericResponse<IEnumerable<TriajeResponseDTO>>> GetAllTriajes()
     {
+
       return await _triajeService.GetAllTriajesAsync();
     }
 

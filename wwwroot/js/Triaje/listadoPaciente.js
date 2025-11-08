@@ -193,19 +193,16 @@ async function buscarTriajes(tipoDoc, numeroDoc, fechaInicio, fechaFin) {
 
     if (result.success && result.data) {
       if (result.data.length === 0) {
-        alert("No se encontraron triajes con esos criterios");
-        renderizarTabla([], "editar");
+        mostrarErrorEnTabla("No se encontraron triajes con esos criterios");
       } else {
         renderizarTabla(result.data, "editar");
       }
     } else {
-      alert(result.message || "Error en la búsqueda");
-      renderizarTabla([], "editar");
+      mostrarErrorEnTabla(result.message || "Error en la búsqueda");
     }
   } catch (error) {
     console.error("Error:", error);
-    alert("Error al realizar la búsqueda");
-    renderizarTabla([], "editar");
+    mostrarErrorEnTabla("Error de conexión. No se pudo realizar la búsqueda.");
   }
 }
 
@@ -291,7 +288,7 @@ async function cargarPacientesFueraHorario() {
   }
 }
 
-// Cargar pacientes ya triados
+// Cargar pacientes ya triados (CON MANEJO DE ERRORES)
 async function cargarPacientesTriados() {
   console.log("Llamando a /triaje/all...");
   try {
@@ -302,11 +299,15 @@ async function cargarPacientesTriados() {
     if (result.success && result.data) {
       renderizarTabla(result.data, "editar");
     } else {
-      renderizarTabla([], "editar");
+      // ✅ Mostrar mensaje de error en la tabla
+      mostrarErrorEnTabla(result.message || "No se pudieron cargar los datos");
     }
   } catch (error) {
     console.error("Error:", error);
-    renderizarTabla([], "editar");
+    // ✅ Mostrar mensaje de error en la tabla
+    mostrarErrorEnTabla(
+      "Error de conexión. No se pudieron cargar los datos. Por favor, intente nuevamente."
+    );
   }
 }
 
@@ -364,6 +365,19 @@ function renderizarTabla(data, tipo) {
       })
       .join("");
   }
+}
+
+// ✅ NUEVA FUNCIÓN: Mostrar error en la tabla
+function mostrarErrorEnTabla(mensaje) {
+  const tbody = document.getElementById("tablaPacientesBody");
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="7" style="color: #dc3545; padding: 30px; text-align: center; font-weight: 500; font-size: 15px;">
+        <i class="fas fa-exclamation-triangle" style="margin-right: 10px; font-size: 18px;"></i>
+        ${mensaje}
+      </td>
+    </tr>
+  `;
 }
 
 // Ir a registrar triaje

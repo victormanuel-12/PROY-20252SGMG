@@ -204,6 +204,7 @@ namespace SGMG.Services.ServiceImpl
     {
       try
       {
+        //throw new Exception("Error simulado para pruebas");
         Console.WriteLine("Obteniendo todos los triajes...");
 
         // Traer todos los triajes
@@ -299,7 +300,7 @@ namespace SGMG.Services.ServiceImpl
         Console.WriteLine($"Stack: {ex.StackTrace}");
         return new GenericResponse<IEnumerable<TriajeResponseDTO>>(
             false,
-            $"Error al obtener triajes: {ex.Message}"
+            "No se pudo cargar la lista de pacientes. Por favor, intente nuevamente"
         );
       }
     }
@@ -611,7 +612,7 @@ namespace SGMG.Services.ServiceImpl
       }
     }
 
-    
+
   }
 }
 
