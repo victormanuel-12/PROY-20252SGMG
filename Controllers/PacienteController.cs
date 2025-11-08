@@ -99,7 +99,7 @@ namespace SGMG.Controllers
     {
       try
       {
-        throw new Exception("Error simulado para pruebas");
+        //throw new Exception("Error simulado para pruebas");
         _logger.LogInformation($"=== GENERANDO VISTA PREVIA DE RECORDATORIO - Cita ID: {idCita} ===");
 
         // Consultar la cita con sus relaciones
