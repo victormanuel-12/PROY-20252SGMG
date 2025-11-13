@@ -1154,10 +1154,7 @@ function calConfirmarCita() {
         setTimeout(() => {
           window.location.href = '/Home/Paciente';
         }, 2000);
-      } else if (!esReprogramacion) {
-        // Si es una cita nueva, recargar el calendario
-        calCargarCalendario();
-      }
+      } 
     } else {
       // Mostrar error en toast sin redireccionar
       showToast(data.mensaje || 'Error al procesar la cita', 'error');

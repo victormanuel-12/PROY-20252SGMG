@@ -273,6 +273,17 @@ function onLimpiarFiltros() {
   renderMedicosTable([]);
 }
 
+// Ejecutar búsqueda automáticamente al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Cargar consultorios si tienes esa función
+    if (typeof cargarConsultorios === 'function') {
+        loadConsultorios();
+    }
+    
+    // Ejecutar búsqueda automática
+    onBuscarMedicos();
+});
+
 function renderMedicosTable(medicos) {
   const tbody = document.getElementById("medicosTableBody");
   if (!tbody) return;
